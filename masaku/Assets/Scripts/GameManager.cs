@@ -30,6 +30,10 @@ public class GameManager : MonoBehaviour
     [Header("References")]
     public MasakuCardManager cardManager;
     
+    [Header("Special Cards")]
+    public ActionCard wizardBoonDraw; 
+    public ActionCard wizardBoonFocus; 
+    
     private bool isPlayerTurn = true;
     
     void Awake()
@@ -335,21 +339,17 @@ public class GameManager : MonoBehaviour
     
     public void GiveWizardBoon()
     {
-        // Random: Tarik 2 kartu ATAU +1 fokus next turn
-        int random = Random.Range(0, 2);
+        int randomBoon = Random.Range(0, 2);
         
-        if (random == 0)
+        if (randomBoon == 0 && wizardBoonDraw != null)
         {
-            Debug.Log("Wizard Boon: Tarik 2 kartu sekarang!");
-            if (cardManager != null)
-            {
-                cardManager.DrawCards(2);
-            }
+            cardManager.AddCardToDeck(wizardBoonDraw);
+            Debug.Log("Wizard memberikan BOON: Draw 2 Cards!");
         }
-        else
+        else if (randomBoon == 1 && wizardBoonFocus != null)
         {
-            Debug.Log("Wizard Boon: +1 Fokus di awal giliran berikutnya!");
-            bonusFocusNextTurn += 1;
+            cardManager.AddCardToDeck(wizardBoonFocus);
+            Debug.Log("Wizard memberikan BOON: +1 Focus Next Turn!");
         }
     }
     

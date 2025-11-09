@@ -18,6 +18,9 @@ public class MasakuCardManager : MonoBehaviour
     [Header("Hand Settings")]
     public int maxHandSize = 5;
     
+    [Header("Player Reference")]
+    public PlayerMovement playerMovement;
+    
     void Awake()
     {
         if (Instance == null)
@@ -131,6 +134,16 @@ public class MasakuCardManager : MonoBehaviour
             return false;
         }
         
+        // NEW: Move player to target location if tag exists
+        if (!string.IsNullOrEmpty(card.targetTag) && playerMovement != null)
+        {
+            Vector3 targetPos = KitchenLocationManager.Instance.GetLocationPosition(card.targetTag);
+            if (targetPos != Vector3.zero)
+            {
+                playerMovement.MoveToLocation(targetPos, card);
+            }
+        }
+        
         // Tambahkan kartu ke preparation station
         GameManager.Instance.AddCardToPreparation(card.cardType);
         
@@ -191,6 +204,15 @@ public class MasakuCardManager : MonoBehaviour
         {
             discardPile.Add(curseCard);
             Debug.Log("Kartu CURSE ditambahkan ke discard pile!");
+        }
+    }
+    
+    public void AddCardToDeck(ActionCard card)
+    {
+        if (card != null)
+        {
+            deck.Add(card);
+            Debug.Log($"{card.cardName} ditambahkan ke deck!");
         }
     }
     

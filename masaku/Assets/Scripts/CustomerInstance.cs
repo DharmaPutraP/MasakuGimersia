@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro; // Add this for TextMeshPro
 
 public class CustomerInstance : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class CustomerInstance : MonoBehaviour
     [Header("UI References")]
     public SpriteRenderer customerSprite;
     public Transform patienceBarTransform;
+    public TextMeshProUGUI orderDisplayText; // NEW: Text to show order
     
     private bool isServed = false;
     
@@ -27,7 +29,22 @@ public class CustomerInstance : MonoBehaviour
         }
         
         UpdatePatienceBar();
+        UpdateOrderDisplay(); // NEW: Update order display
         Debug.Log($"{customer.customerName} duduk di kursi {seat} dengan kesabaran {currentPatience}");
+    }
+    
+    // NEW: Method to display required order
+    void UpdateOrderDisplay()
+    {
+        if (orderDisplayText == null) return;
+        
+        string orderText = "Order: ";
+        foreach (CardType cardType in customerData.requiredCards)
+        {
+            orderText += cardType.ToString() + " ";
+        }
+        
+        orderDisplayText.text = orderText;
     }
     
     public void DecreasePatience()
