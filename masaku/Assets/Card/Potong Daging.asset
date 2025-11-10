@@ -12,11 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3990342a5db08064ab46fc5e892ee6e4, type: 3}
   m_Name: Potong Daging
   m_EditorClassIdentifier: 
-  cardName: Potong Daging
+  cardName: Potong Daging 1
   cardType: 1
   focusCost: 1
-  targetTag: potongDaging
-  cardImage: {fileID: 0}
+  pickupTag: StorageMeat
+  targetTag: CuttingBoard
+  cardImage: {fileID: 21300000, guid: b9064fde64fd4f348947b036942bbdaa, type: 3}
   description: 
   isSpecialCard: 0
   discardCount: 0

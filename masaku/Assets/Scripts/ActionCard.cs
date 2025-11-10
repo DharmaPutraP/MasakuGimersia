@@ -21,7 +21,11 @@ public class ActionCard : ScriptableObject
     public string cardName;
     public CardType cardType;
     public int focusCost;
-    public string targetTag; // Tag lokasi tujuan
+    
+    [Header("Movement Targets")]
+    public string pickupTag; // Tag untuk mengambil bahan (optional)
+    public string targetTag; // Tag lokasi tujuan utama
+    
     public Sprite cardImage;
     [TextArea(3, 5)]
     public string description;

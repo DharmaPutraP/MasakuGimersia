@@ -66,7 +66,12 @@ public class MasakuUI : MonoBehaviour
     
     void Update()
     {
-        UpdateUI();
+        // Only update displays that change frequently
+        // DON'T call UpdateHandDisplay() every frame - it destroys and recreates cards!
+        UpdateFocusDisplay();
+        UpdateReputationDisplay();
+        UpdateDayDisplay();
+        UpdatePreparationStationDisplay();
     }
     
     public void UpdateUI()
@@ -82,14 +87,14 @@ public class MasakuUI : MonoBehaviour
     {
         if (focusText != null)
         {
-            focusText.text = $"Fokus: {GameManager.Instance.currentFocus}";
+            focusText.text = $"{GameManager.Instance.currentFocus}";
         }
         
-        if (focusBar != null)
-        {
-            float focusPercent = GameManager.Instance.currentFocus / 10f; // Max assumed 10
-            focusBar.fillAmount = focusPercent;
-        }
+        // if (focusBar != null)
+        // {
+        //     float focusPercent = GameManager.Instance.currentFocus / 10f; // Max assumed 10
+        //     focusBar.fillAmount = focusPercent;
+        // }
     }
     
     void UpdateReputationDisplay()
@@ -100,13 +105,13 @@ public class MasakuUI : MonoBehaviour
         }
         
         // Update hearts visual
-        for (int i = 0; i < reputationHearts.Length; i++)
-        {
-            if (reputationHearts[i] != null)
-            {
-                reputationHearts[i].SetActive(i < GameManager.Instance.reputation);
-            }
-        }
+        // for (int i = 0; i < reputationHearts.Length; i++)
+        // {
+        //     if (reputationHearts[i] != null)
+        //     {
+        //         reputationHearts[i].SetActive(i < GameManager.Instance.reputation);
+        //     }
+        // }
     }
     
     void UpdateDayDisplay()
@@ -119,7 +124,23 @@ public class MasakuUI : MonoBehaviour
     
     void UpdateHandDisplay()
     {
+        Debug.Log("=== UpdateHandDisplay called ===");
+        
+        // Debug check
+        if (handContainer == null)
+        {
+            Debug.LogError("HandContainer is NULL! Assign it in MasakuUI Inspector.");
+            return;
+        }
+        
+        if (cardUIPrefab == null)
+        {
+            Debug.LogError("CardUI Prefab is NULL! Assign it in MasakuUI Inspector.");
+            return;
+        }
+        
         // Hapus UI kartu lama
+        Debug.Log($"Destroying {cardUIObjects.Count} old card UI objects");
         foreach (GameObject cardUI in cardUIObjects)
         {
             Destroy(cardUI);
@@ -128,10 +149,14 @@ public class MasakuUI : MonoBehaviour
         
         // Buat UI untuk kartu di tangan
         List<ActionCard> hand = MasakuCardManager.Instance.GetHand();
+        Debug.Log($"UpdateHandDisplay: Creating UI for {hand.Count} cards in hand");
+        
         for (int i = 0; i < hand.Count; i++)
         {
             CreateCardUI(hand[i], i);
         }
+        
+        Debug.Log($"Total card UI objects created: {cardUIObjects.Count}");
     }
     
     void CreateCardUI(ActionCard card, int index)
@@ -141,45 +166,117 @@ public class MasakuUI : MonoBehaviour
         GameObject cardUI = Instantiate(cardUIPrefab, handContainer);
         cardUIObjects.Add(cardUI);
         
-        // Setup card UI components
-        TextMeshProUGUI nameText = cardUI.transform.Find("CardName")?.GetComponent<TextMeshProUGUI>();
-        TextMeshProUGUI costText = cardUI.transform.Find("FocusCost")?.GetComponent<TextMeshProUGUI>();
-        Image cardImage = cardUI.transform.Find("CardImage")?.GetComponent<Image>();
+        Debug.Log($"Created CardUI for: {card.cardName}, GameObject: {cardUI.name}, Active: {cardUI.activeInHierarchy}");
+        
+        // Get Button component (Button has an Image component built-in)
         Button cardButton = cardUI.GetComponent<Button>();
         
-        if (nameText != null) nameText.text = card.cardName;
-        if (costText != null) costText.text = card.isSpecialCard ? "Spesial" : $"Fokus: {card.focusCost}";
-        if (cardImage != null && card.cardImage != null) cardImage.sprite = card.cardImage;
-        
-        // Tambahkan listener untuk click
         if (cardButton != null)
         {
+            // Debug.Log($"Button found! Interactable: {cardButton.interactable}");
+            
+            // Make sure button is interactable
+            cardButton.interactable = true;
+            
+            // Get the Image component from the Button
+            Image cardImage = cardButton.GetComponent<Image>();
+            
+            if (cardImage != null && card.cardImage != null)
+            {
+                // Set the card's designed image
+                cardImage.sprite = card.cardImage;
+                
+                // Make sure raycast target is enabled
+                cardImage.raycastTarget = true;
+                // Debug.Log($"Set card image for: {card.cardName}, Raycast Target: {cardImage.raycastTarget}");
+                
+                // Highlight if selected (add yellow tint) - now using index
+                if (MasakuCardManager.Instance.IsCardSelected(index))
+                {
+                    cardImage.color = new Color(1f, 1f, 0.5f, 1f); // Yellow tint
+                }
+                else
+                {
+                    cardImage.color = Color.white; // Normal color
+                }
+            }
+            else
+            {
+                if (cardImage == null) Debug.LogError($"Button missing Image component!");
+                if (card.cardImage == null) Debug.LogError($"Card '{card.cardName}' missing cardImage sprite!");
+            }
+            
+            // Add click listener
             int cardIndex = index;
             cardButton.onClick.AddListener(() => OnCardClicked(cardIndex));
+            // Debug.Log($"Click listener added for card index: {cardIndex}");
+        }
+        else
+        {
+            Debug.LogError("CardUI prefab missing Button component!");
         }
     }
     
     void OnCardClicked(int handIndex)
     {
-        MasakuCardManager.Instance.PlayCardByIndex(handIndex);
+        Debug.Log($"===== CARD CLICKED! Index: {handIndex} =====");
+        
+        List<ActionCard> hand = MasakuCardManager.Instance.GetHand();
+        if (handIndex < 0 || handIndex >= hand.Count)
+        {
+            Debug.LogError($"Invalid hand index: {handIndex}, hand count: {hand.Count}");
+            return;
+        }
+        
+        ActionCard card = hand[handIndex];
+        Debug.Log($"Card clicked: {card.cardName}");
+        
+        // Toggle selection by index
+        if (MasakuCardManager.Instance.IsCardSelected(handIndex))
+        {
+            Debug.Log($"Deselecting card at index: {handIndex}");
+            MasakuCardManager.Instance.DeselectCard(handIndex);
+        }
+        else
+        {
+            Debug.Log($"Selecting card at index: {handIndex}");
+            MasakuCardManager.Instance.SelectCard(handIndex);
+        }
+        
+        // Update UI to show selection
+        UpdateHandDisplay();
     }
     
     void UpdatePreparationStationDisplay()
     {
         if (preparationText != null)
         {
-            string prepText = "Stasiun Persiapan: ";
-            if (GameManager.Instance.preparationStation.Count == 0)
+            // Show selected cards (before execution)
+            List<ActionCard> selectedCards = MasakuCardManager.Instance.GetSelectedCards();
+            
+            string prepText = "Kartu Dipilih: ";
+            if (selectedCards.Count == 0)
             {
-                prepText += "[Kosong]";
+                prepText += "[Belum ada]";
             }
             else
             {
+                foreach (ActionCard card in selectedCards)
+                {
+                    prepText += $"[{card.cardName}] ";
+                }
+            }
+            
+            // Show preparation station (after execution)
+            if (GameManager.Instance.preparationStation.Count > 0)
+            {
+                prepText += "\nDi Stasiun: ";
                 foreach (CardType card in GameManager.Instance.preparationStation)
                 {
                     prepText += $"[{card}] ";
                 }
             }
+            
             preparationText.text = prepText;
         }
     }
@@ -204,14 +301,29 @@ public class MasakuUI : MonoBehaviour
             return;
         }
         
-        if (GameManager.Instance.preparationStation.Count == 0)
+        // Check if cards are selected
+        List<ActionCard> selectedCards = MasakuCardManager.Instance.GetSelectedCards();
+        if (selectedCards.Count == 0)
         {
-            Debug.LogWarning("Stasiun Persiapan kosong!");
+            Debug.LogWarning("Pilih kartu terlebih dahulu!");
             return;
         }
         
-        GameManager.Instance.SubmitOrder(selectedSeat);
-        selectedSeat = -1;
+        // Start executing selected cards
+        StartCoroutine(ExecuteAndSubmitOrder());
+    }
+    
+    IEnumerator ExecuteAndSubmitOrder()
+    {
+        // Execute all selected cards
+        yield return StartCoroutine(MasakuCardManager.Instance.ExecuteSelectedCards());
+        
+        // After all movements complete, submit order
+        if (GameManager.Instance.preparationStation.Count > 0)
+        {
+            GameManager.Instance.SubmitOrder(selectedSeat);
+            selectedSeat = -1;
+        }
     }
     
     void OnEndTurnClicked()

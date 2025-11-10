@@ -15,8 +15,9 @@ MonoBehaviour:
   cardName: Wizard Boon Draw
   cardType: 6
   focusCost: 0
+  pickupTag: 
   targetTag: wizardBoonDraw
-  cardImage: {fileID: 0}
+  cardImage: {fileID: 21300000, guid: 234dc464d71c2f741a1ff6b6328d7e38, type: 3}
   description: 
   isSpecialCard: 1
   discardCount: 0

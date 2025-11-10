@@ -84,7 +84,7 @@ public class CardUI : MonoBehaviour
     {
         if (focusText != null)
         {
-            focusText.text = $"Fokus: {CardManager.Instance.currentFocus}/{CardManager.Instance.maxFocus}";
+            focusText.text = $"{CardManager.Instance.currentFocus}/{CardManager.Instance.maxFocus}";
         }
     }
 }

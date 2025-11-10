@@ -12,11 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3990342a5db08064ab46fc5e892ee6e4, type: 3}
   m_Name: Panaskan Air
   m_EditorClassIdentifier: 
-  cardName: Panaskan Air
+  cardName: Panaskan Air 1
   cardType: 2
   focusCost: 1
-  targetTag: panaskanAir
-  cardImage: {fileID: 0}
+  pickupTag: 
+  targetTag: Stove
+  cardImage: {fileID: 21300000, guid: 159059cad1dfabf46a60cbe8599353b5, type: 3}
   description: 
   isSpecialCard: 0
   discardCount: 0

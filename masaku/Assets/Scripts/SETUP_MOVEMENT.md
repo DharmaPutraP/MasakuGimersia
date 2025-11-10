@@ -10,8 +10,9 @@ Create these tags in Unity (Edit → Project Settings → Tags and Layers):
 
 1. **CuttingBoard** - For cutting actions (Potong Sayuran, Potong Daging)
 2. **Stove** - For cooking actions (Panaskan Air, Panaskan Daging)
-3. **WaterStation** - For water-related actions
-4. **ServingCounter** - For serving customers
+3. **ServingCounter** - For serving customers
+4. **StorageMeat** - For Meat Storage
+5. **StorageVegetable** - For Vegetable Storage
 
 ### Example Scene Setup:
 
@@ -21,7 +22,8 @@ Kitchen
 ├── CuttingBoard_02 (Tag: "CuttingBoard")
 ├── Stove_01 (Tag: "Stove")
 ├── Stove_02 (Tag: "Stove")
-├── WaterStation (Tag: "WaterStation")
+├── Freezer (Tag: "StorageMeat")
+├── VegetableContainer (Tag: "StorageVegetable")
 └── ServingCounter (Tag: "ServingCounter")
 ```
 

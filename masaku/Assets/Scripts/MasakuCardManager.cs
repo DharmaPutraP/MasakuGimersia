@@ -21,17 +21,23 @@ public class MasakuCardManager : MonoBehaviour
     [Header("Player Reference")]
     public PlayerMovement playerMovement;
     
+    [Header("Card Selection")]
+    private List<int> selectedIndices = new List<int>(); // Track by hand index instead of card reference
+    
     void Awake()
     {
         if (Instance == null)
             Instance = this;
         else
             Destroy(gameObject);
+        
+        // Initialize deck in Awake to ensure it's ready before other scripts use it
+        InitializeDeck();
     }
     
     void Start()
     {
-        InitializeDeck();
+        // Deck already initialized in Awake
     }
     
     // Inisialisasi deck dengan 10 kartu tetap (2x masing-masing dari 5 kartu)
@@ -108,6 +114,170 @@ public class MasakuCardManager : MonoBehaviour
             discardPile.Clear();
             ShuffleDeck();
         }
+    }
+    
+    // NEW: Select card for combo (doesn't execute immediately)
+    public bool SelectCard(int handIndex)
+    {
+        if (handIndex < 0 || handIndex >= hand.Count)
+        {
+            Debug.LogWarning("Index kartu tidak valid!");
+            return false;
+        }
+        
+        ActionCard card = hand[handIndex];
+        
+        // Check if already selected
+        if (selectedIndices.Contains(handIndex))
+        {
+            Debug.LogWarning("Kartu sudah dipilih!");
+            return false;
+        }
+        
+        // Check if special card
+        if (card.isSpecialCard)
+        {
+            Debug.LogWarning("Kartu spesial tidak bisa digunakan untuk combo!");
+            return false;
+        }
+        
+        // Check focus
+        int totalFocusCost = card.focusCost;
+        foreach (int idx in selectedIndices)
+        {
+            totalFocusCost += hand[idx].focusCost;
+        }
+        
+        if (totalFocusCost > GameManager.Instance.currentFocus)
+        {
+            Debug.LogWarning($"Fokus tidak cukup! Total butuh {totalFocusCost}, punya {GameManager.Instance.currentFocus}");
+            return false;
+        }
+        
+        // Add to selection
+        selectedIndices.Add(handIndex);
+        
+        Debug.Log($"Kartu dipilih: {card.cardName} (Index: {handIndex}, Total: {selectedIndices.Count})");
+        return true;
+    }
+    
+    // NEW: Deselect card from combo
+    public bool DeselectCard(int handIndex)
+    {
+        if (selectedIndices.Contains(handIndex))
+        {
+            selectedIndices.Remove(handIndex);
+            Debug.Log($"Kartu dibatalkan: {hand[handIndex].cardName}");
+            return true;
+        }
+        return false;
+    }
+    
+    // NEW: Clear all selections
+    public void ClearSelection()
+    {
+        selectedIndices.Clear();
+        Debug.Log("Semua pilihan kartu dibatalkan");
+    }
+    
+    // NEW: Get selected cards
+    public List<ActionCard> GetSelectedCards()
+    {
+        List<ActionCard> selected = new List<ActionCard>();
+        foreach (int idx in selectedIndices)
+        {
+            if (idx >= 0 && idx < hand.Count)
+            {
+                selected.Add(hand[idx]);
+            }
+        }
+        return selected;
+    }
+    
+    // NEW: Check if card is selected by index
+    public bool IsCardSelected(int handIndex)
+    {
+        return selectedIndices.Contains(handIndex);
+    }
+    
+    // NEW: Execute all selected cards at once
+    public IEnumerator ExecuteSelectedCards()
+    {
+        if (selectedIndices.Count == 0)
+        {
+            Debug.LogWarning("Tidak ada kartu yang dipilih!");
+            yield break;
+        }
+        
+        Debug.Log($"=== Mulai eksekusi {selectedIndices.Count} kartu ===");
+        
+        // Get cards by indices and sort indices in descending order (to remove from hand correctly)
+        List<ActionCard> cardsToExecute = new List<ActionCard>();
+        List<int> sortedIndices = new List<int>(selectedIndices);
+        sortedIndices.Sort();
+        
+        foreach (int idx in sortedIndices)
+        {
+            if (idx >= 0 && idx < hand.Count)
+            {
+                cardsToExecute.Add(hand[idx]);
+            }
+        }
+        
+        // Calculate and spend total focus
+        int totalFocus = 0;
+        foreach (ActionCard card in cardsToExecute)
+        {
+            totalFocus += card.focusCost;
+        }
+        
+        if (!GameManager.Instance.SpendFocus(totalFocus))
+        {
+            Debug.LogWarning("Fokus tidak cukup!");
+            yield break;
+        }
+        
+        // Execute each card sequentially
+        foreach (ActionCard card in cardsToExecute)
+        {
+            // Move player to location if tag exists
+            if (!string.IsNullOrEmpty(card.targetTag) && playerMovement != null)
+            {
+                Vector3 targetPos = KitchenLocationManager.Instance.GetLocationPosition(card.targetTag);
+                if (targetPos != Vector3.zero)
+                {
+                    playerMovement.MoveToLocation(targetPos, card);
+                    
+                    // Wait for movement to complete
+                    while (playerMovement.IsMoving())
+                    {
+                        yield return null;
+                    }
+                }
+            }
+            
+            // Add card to preparation station
+            GameManager.Instance.AddCardToPreparation(card.cardType);
+            
+            Debug.Log($"Kartu dieksekusi: {card.cardName}");
+        }
+        
+        // Move cards from hand to discard pile (remove in reverse order to preserve indices)
+        sortedIndices.Sort((a, b) => b.CompareTo(a)); // Sort descending
+        foreach (int idx in sortedIndices)
+        {
+            if (idx >= 0 && idx < hand.Count)
+            {
+                ActionCard card = hand[idx];
+                hand.RemoveAt(idx);
+                discardPile.Add(card);
+            }
+        }
+        
+        Debug.Log("=== Semua kartu selesai dieksekusi ===");
+        
+        // Clear selection
+        selectedIndices.Clear();
     }
     
     public bool PlayCard(ActionCard card)

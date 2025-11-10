@@ -57,7 +57,7 @@ public class KitchenLocationManager : MonoBehaviour
         locations.Clear();
         
         // Find all GameObjects with specific tags
-        string[] kitchenTags = { "CuttingBoard", "Stove", "WaterStation", "ServingCounter" };
+        string[] kitchenTags = { "CuttingBoard", "Stove", "ServingCounter", "StorageVegetable", "StorageMeat" };
         
         foreach (string tag in kitchenTags)
         {

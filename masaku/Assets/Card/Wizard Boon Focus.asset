@@ -15,9 +15,10 @@ MonoBehaviour:
   cardName: Wizard Boon Focus
   cardType: 7
   focusCost: 0
-  targetTag: wizardBoonDraw
-  cardImage: {fileID: 0}
-  description: 
+  pickupTag: 
+  targetTag: 
+  cardImage: {fileID: 21300000, guid: 4078ca0573fd8c5468ff491f09336608, type: 3}
+  description: +1 Fokus untuk turn berikutnya
   isSpecialCard: 1
   discardCount: 0
   drawCount: 0

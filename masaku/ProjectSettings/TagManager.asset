@@ -3,7 +3,17 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - CuttingBoard
+  - Stove
+  - ServingCounter
+  - StorageVegetable
+  - WaterStation
+  - PotongSayuran
+  - PotongDaging
+  - PanaskanDaging
+  - PanaskanAir
+  - StorageMeat
   layers:
   - Default
   - TransparentFX

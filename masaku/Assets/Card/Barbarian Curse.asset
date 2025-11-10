@@ -15,9 +15,10 @@ MonoBehaviour:
   cardName: Barbarian Curse
   cardType: 5
   focusCost: 0
+  pickupTag: 
   targetTag: 
-  cardImage: {fileID: 0}
-  description: 
+  cardImage: {fileID: 21300000, guid: 91dd4943eb7407646966a5be6563ec98, type: 3}
+  description: Kartu kutukan dari Barbarian yang marah
   isSpecialCard: 1
   discardCount: 0
   drawCount: 0

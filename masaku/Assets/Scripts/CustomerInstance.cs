@@ -36,15 +36,15 @@ public class CustomerInstance : MonoBehaviour
     // NEW: Method to display required order
     void UpdateOrderDisplay()
     {
-        if (orderDisplayText == null) return;
+        // if (orderDisplayText == null) return;
         
-        string orderText = "Order: ";
-        foreach (CardType cardType in customerData.requiredCards)
-        {
-            orderText += cardType.ToString() + " ";
-        }
+        // string orderText = "";
+        // foreach (CardType cardType in customerData.requiredCards)
+        // {
+        //     orderText += cardType.ToString() + " ";
+        // }
         
-        orderDisplayText.text = orderText;
+        // orderDisplayText.text = orderText;
     }
     
     public void DecreasePatience()

@@ -15,6 +15,8 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 targetPosition;
     private bool isMoving = false;
     private ActionCard currentActionCard;
+    private Queue<Vector3> movementQueue = new Queue<Vector3>();
+    private bool hasPickedUpIngredient = false;
     
     void Update()
     {
@@ -26,17 +28,38 @@ public class PlayerMovement : MonoBehaviour
     
     public void MoveToLocation(Vector3 destination, ActionCard card)
     {
-        targetPosition = destination;
         currentActionCard = card;
-        isMoving = true;
+        movementQueue.Clear();
+        hasPickedUpIngredient = false;
         
-        // Set animasi berjalan jika ada
-        if (animator != null)
+        // Check if card requires picking up ingredient first
+        if (!string.IsNullOrEmpty(card.pickupTag))
         {
-            animator.SetBool("IsWalking", true);
+            Vector3 pickupPos = KitchenLocationManager.Instance.GetLocationPosition(card.pickupTag);
+            if (pickupPos != Vector3.zero)
+            {
+                movementQueue.Enqueue(pickupPos);
+                Debug.Log($"Akan mengambil bahan dari: {card.pickupTag}");
+            }
         }
         
-        Debug.Log($"Bergerak ke lokasi: {card.targetTag}");
+        // Then add the main target location
+        movementQueue.Enqueue(destination);
+        
+        // Start moving to first location
+        if (movementQueue.Count > 0)
+        {
+            targetPosition = movementQueue.Dequeue();
+            isMoving = true;
+            
+            // Set animasi berjalan jika ada
+            if (animator != null)
+            {
+                animator.SetBool("IsWalking", true);
+            }
+            
+            Debug.Log($"Bergerak ke lokasi: {(!string.IsNullOrEmpty(card.pickupTag) && !hasPickedUpIngredient ? card.pickupTag : card.targetTag)}");
+        }
     }
     
     void MoveTowardsTarget()
@@ -65,6 +88,31 @@ public class PlayerMovement : MonoBehaviour
     
     void ArrivedAtDestination()
     {
+        // Check if there are more locations in queue
+        if (movementQueue.Count > 0)
+        {
+            // Mark that we picked up ingredient at first location
+            if (!hasPickedUpIngredient && !string.IsNullOrEmpty(currentActionCard.pickupTag))
+            {
+                hasPickedUpIngredient = true;
+                Debug.Log($"Mengambil bahan dari: {currentActionCard.pickupTag}");
+                
+                // Optional: Add pickup animation here
+                if (animator != null)
+                {
+                    animator.SetTrigger("PickUp");
+                }
+            }
+            
+            // Move to next location
+            targetPosition = movementQueue.Dequeue();
+            isMoving = true;
+            
+            Debug.Log($"Melanjutkan ke lokasi: {currentActionCard.targetTag}");
+            return;
+        }
+        
+        // No more locations, finish movement
         isMoving = false;
         
         // Set animasi idle jika ada
@@ -79,6 +127,7 @@ public class PlayerMovement : MonoBehaviour
         ExecuteActionAtLocation();
         
         currentActionCard = null;
+        hasPickedUpIngredient = false;
     }
     
     void ExecuteActionAtLocation()

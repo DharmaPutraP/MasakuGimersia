@@ -12,12 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3990342a5db08064ab46fc5e892ee6e4, type: 3}
   m_Name: Potong Sayuran
   m_EditorClassIdentifier: 
-  cardName: Potong Sayuran
+  cardName: Potong Sayuran 1
   cardType: 0
   focusCost: 1
-  targetTag: potongSayuran
-  cardImage: {fileID: 0}
-  description: 
+  pickupTag: StorageVegetable
+  targetTag: CuttingBoard
+  cardImage: {fileID: 21300000, guid: fd779a0807afcd84b813e72ce4f24070, type: 3}
+  description: Potong sayuran untuk memasak
   isSpecialCard: 0
   discardCount: 0
   drawCount: 0
