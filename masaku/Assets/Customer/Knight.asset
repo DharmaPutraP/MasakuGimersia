@@ -15,6 +15,7 @@ MonoBehaviour:
   customerName: Knight
   customerType: 0
   customerSprite: {fileID: 21300000, guid: a62702a505eac994fa35ff735eef4a47, type: 3}
+  customerPrefab: {fileID: 3287652382879359959, guid: 9e90cd5197e68ab4bb49d7ad4200a866, type: 3}
   maxPatience: 10
   patienceDecayPerTurn: 2
   requiredCards: 0100000002000000

@@ -35,6 +35,13 @@ public class MasakuUI : MonoBehaviour
     
     [Header("Customer Display")]
     public Transform[] customerUIPositions; // UI untuk menampilkan customer
+    public Transform customerMenuContainer; // Container to hold dynamically created menus
+    public GameObject knightMenuPrefab; // Prefab for Knight menu
+    public GameObject elfMenuPrefab; // Prefab for Elf menu
+    public GameObject wizardMenuPrefab; // Prefab for Wizard menu
+    public GameObject barbarianMenuPrefab; // Prefab for Barbarian menu
+    
+    private List<GameObject> activeMenus = new List<GameObject>(); // Track created menus
     
     private int selectedSeat = -1;
     
@@ -55,19 +62,28 @@ public class MasakuUI : MonoBehaviour
         if (endTurnButton != null)
             endTurnButton.onClick.AddListener(OnEndTurnClicked);
         
-        for (int i = 0; i < seatButtons.Length; i++)
+        // Add null check for seatButtons array
+        if (seatButtons != null && seatButtons.Length > 0)
         {
-            int seatIndex = i;
-            seatButtons[i].onClick.AddListener(() => OnSeatSelected(seatIndex));
+            for (int i = 0; i < seatButtons.Length; i++)
+            {
+                if (seatButtons[i] != null)
+                {
+                    int seatIndex = i;
+                    seatButtons[i].onClick.AddListener(() => OnSeatSelected(seatIndex));
+                }
+            }
         }
         
         UpdateUI();
+        UpdateCustomerMenus(); // Initialize customer menus visibility
     }
     
     void Update()
     {
         // Only update displays that change frequently
         // DON'T call UpdateHandDisplay() every frame - it destroys and recreates cards!
+        // DON'T call UpdateCustomerMenus() every frame - it destroys and recreates menus!
         UpdateFocusDisplay();
         UpdateReputationDisplay();
         UpdateDayDisplay();
@@ -81,6 +97,7 @@ public class MasakuUI : MonoBehaviour
         UpdateDayDisplay();
         UpdateHandDisplay();
         UpdatePreparationStationDisplay();
+        UpdateCustomerMenus(); // Only update menus when explicitly called
     }
     
     void UpdateFocusDisplay()
@@ -122,7 +139,7 @@ public class MasakuUI : MonoBehaviour
         }
     }
     
-    void UpdateHandDisplay()
+    public void UpdateHandDisplay()
     {
         Debug.Log("=== UpdateHandDisplay called ===");
         
@@ -281,6 +298,125 @@ public class MasakuUI : MonoBehaviour
         }
     }
     
+    public void UpdateCustomerMenus()
+    {
+        if (customerMenuContainer == null)
+        {
+            Debug.LogError("CustomerMenuContainer is NULL! Assign it in MasakuUI Inspector.");
+            return;
+        }
+        
+        // Get active customers from GameManager
+        CustomerInstance[] activeCustomers = GameManager.Instance.GetActiveCustomers();
+        
+        Debug.Log($"=== Updating Customer Menus: {activeCustomers.Length} seats ===");
+        
+        // Destroy all existing menus
+        foreach (GameObject menu in activeMenus)
+        {
+            if (menu != null)
+                Destroy(menu);
+        }
+        activeMenus.Clear();
+        
+        // Create menu for each active customer
+        int menuCount = 0;
+        for (int i = 0; i < activeCustomers.Length; i++)
+        {
+            if (activeCustomers[i] != null)
+            {
+                Customer customer = activeCustomers[i].GetCustomer();
+                if (customer != null)
+                {
+                    Debug.Log($"Seat {i}: {customer.customerName} (Type: {customer.customerType})");
+                    
+                    // Get the appropriate menu prefab for this customer type
+                    GameObject menuPrefab = GetMenuPrefabForCustomerType(customer.customerType);
+                    
+                    if (menuPrefab != null)
+                    {
+                        // Instantiate menu
+                        GameObject menuInstance = Instantiate(menuPrefab, customerMenuContainer);
+                        activeMenus.Add(menuInstance);
+                        menuCount++;
+                        
+                        Debug.Log($"Created menu for {customer.customerName} at seat {i}");
+                        
+                        // Add click listener to the menu
+                        Button menuButton = menuInstance.GetComponent<Button>();
+                        if (menuButton == null)
+                        {
+                            // If menu doesn't have Button component on root, try to find it in children
+                            menuButton = menuInstance.GetComponentInChildren<Button>();
+                        }
+                        
+                        if (menuButton != null)
+                        {
+                            int seatIndex = i; // Capture seat index for this menu
+                            menuButton.onClick.AddListener(() => OnSeatSelected(seatIndex));
+                            
+                            // Make sure button is interactable and image has raycast target
+                            menuButton.interactable = true;
+                            Image menuImage = menuButton.GetComponent<Image>();
+                            if (menuImage != null)
+                            {
+                                menuImage.raycastTarget = true;
+                            }
+                            
+                            Debug.Log($"Added click listener to menu for seat {seatIndex}");
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"Menu for {customer.customerName} has no Button component! Add a Button to the prefab.");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogError($"Menu prefab for {customer.customerType} is NULL!");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"Seat {i}: Customer instance exists but customerData is null!");
+                }
+            }
+            else
+            {
+                Debug.Log($"Seat {i}: Empty");
+            }
+        }
+        
+        Debug.Log($"Total menus created: {menuCount}");
+    }
+    
+    GameObject GetMenuPrefabForCustomerType(CustomerType type)
+    {
+        GameObject prefab = null;
+        
+        switch (type)
+        {
+            case CustomerType.Knight:
+                prefab = knightMenuPrefab;
+                break;
+            case CustomerType.Elf:
+                prefab = elfMenuPrefab;
+                break;
+            case CustomerType.Wizard:
+                prefab = wizardMenuPrefab;
+                break;
+            case CustomerType.Barbarian:
+                prefab = barbarianMenuPrefab;
+                break;
+        }
+        
+        if (prefab == null)
+        {
+            Debug.LogError($"Menu prefab for {type} is NULL! Assign it in MasakuUI Inspector.");
+        }
+        
+        return prefab;
+    }
+    
     void OnSeatSelected(int seatIndex)
     {
         selectedSeat = seatIndex;
@@ -318,16 +454,25 @@ public class MasakuUI : MonoBehaviour
         // Execute all selected cards
         yield return StartCoroutine(MasakuCardManager.Instance.ExecuteSelectedCards());
         
+        // Update UI to remove executed cards from hand display
+        UpdateHandDisplay();
+        
         // After all movements complete, submit order
         if (GameManager.Instance.preparationStation.Count > 0)
         {
             GameManager.Instance.SubmitOrder(selectedSeat);
             selectedSeat = -1;
+            
+            // Update customer menus after serving (customer may have left)
+            UpdateCustomerMenus();
         }
     }
     
     void OnEndTurnClicked()
     {
         GameManager.Instance.EndPlayerTurn();
+        
+        // Don't refresh here - hand is empty at this moment
+        // UI will refresh when StartPlayerTurn() is called after patience phase
     }
 }

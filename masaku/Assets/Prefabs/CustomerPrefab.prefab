@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8535753720643280129}
   - component: {fileID: 850215099833221548}
+  - component: {fileID: 1815068636656933609}
   m_Layer: 0
   m_Name: CustomerSprite
   m_TagString: Untagged
@@ -84,6 +85,27 @@ SpriteRenderer:
   m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!95 &1815068636656933609
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1506695861096892139}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &3325356600787770277
 GameObject:
   m_ObjectHideFlags: 0
@@ -371,6 +393,7 @@ MonoBehaviour:
   currentPatience: 0
   seatIndex: 0
   customerSprite: {fileID: 850215099833221548}
+  customerAnimator: {fileID: 0}
   patienceBarTransform: {fileID: 9209303140322520924}
   orderDisplayText: {fileID: 8806870024994085413}
 --- !u!1 &8622310223425577844

@@ -16,7 +16,8 @@ public class Customer : ScriptableObject
 {
     public string customerName;
     public CustomerType customerType;
-    public Sprite customerSprite;
+    public Sprite customerSprite; // Keep for backward compatibility
+    public GameObject customerPrefab; // NEW: The actual customer 3D/2D object with animations
     
     [Header("Patience Settings")]
     public int maxPatience;

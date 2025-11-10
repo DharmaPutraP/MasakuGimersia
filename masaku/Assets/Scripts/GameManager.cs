@@ -19,6 +19,11 @@ public class GameManager : MonoBehaviour
     public Transform[] customerSeats; // 4 kursi
     public GameObject customerPrefab;
     private CustomerInstance[] activeCustomers = new CustomerInstance[4];
+    
+    public CustomerInstance[] GetActiveCustomers()
+    {
+        return activeCustomers;
+    }
     private Queue<Customer> currentDayDeck = new Queue<Customer>();
     
     [Header("Day Configuration")]
@@ -104,13 +109,22 @@ public class GameManager : MonoBehaviour
     
     public void FillEmptySeats()
     {
+        bool customersSpawned = false;
+        
         for (int i = 0; i < customerSeats.Length; i++)
         {
             if (activeCustomers[i] == null && currentDayDeck.Count > 0)
             {
                 Customer nextCustomer = currentDayDeck.Dequeue();
                 SpawnCustomer(nextCustomer, i);
+                customersSpawned = true;
             }
+        }
+        
+        // Update UI menus after spawning new customers
+        if (customersSpawned && MasakuUI.Instance != null)
+        {
+            MasakuUI.Instance.UpdateCustomerMenus();
         }
     }
     
@@ -122,13 +136,29 @@ public class GameManager : MonoBehaviour
             return;
         }
         
-        GameObject customerObj = Instantiate(customerPrefab, customerSeats[seatIndex].position, Quaternion.identity, customerSeats[seatIndex]);
+        // Use customer-specific prefab if available, otherwise use default
+        GameObject prefabToSpawn = customer.customerPrefab != null ? customer.customerPrefab : customerPrefab;
+        
+        if (prefabToSpawn == null)
+        {
+            Debug.LogError($"No prefab available for {customer.customerName}!");
+            return;
+        }
+
+        // Rotate to face camera (adjust rotation as needed for your setup)
+        Quaternion faceCamera = Quaternion.Euler(0, 180, 0); // Adjust Y rotation: 0, 90, 180, or 270
+        
+        GameObject customerObj = Instantiate(prefabToSpawn, customerSeats[seatIndex].position, faceCamera, customerSeats[seatIndex]);
         CustomerInstance instance = customerObj.GetComponent<CustomerInstance>();
         
         if (instance != null)
         {
             instance.Initialize(customer, seatIndex);
             activeCustomers[seatIndex] = instance;
+        }
+        else
+        {
+            Debug.LogError($"Customer prefab for {customer.customerName} is missing CustomerInstance component!");
         }
     }
     
@@ -149,6 +179,12 @@ public class GameManager : MonoBehaviour
         // Kosongkan preparation station
         preparationStation.Clear();
         
+        // Update UI to show new hand
+        if (MasakuUI.Instance != null)
+        {
+            MasakuUI.Instance.UpdateHandDisplay();
+        }
+        
         Debug.Log($"--- Giliran Player Dimulai (Fokus: {currentFocus}) ---");
     }
     
@@ -158,6 +194,12 @@ public class GameManager : MonoBehaviour
         
         isPlayerTurn = false;
         Debug.Log("--- Giliran Player Berakhir ---");
+        
+        // Clear selected cards before discarding hand
+        if (cardManager != null)
+        {
+            cardManager.ClearSelection();
+        }
         
         // Buang semua kartu di tangan
         if (cardManager != null)
@@ -176,22 +218,30 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("--- Fase Kesabaran ---");
         
+        int customerCount = 0;
         foreach (CustomerInstance customer in activeCustomers)
         {
             if (customer != null)
             {
+                customerCount++;
+                Debug.Log($"Customer {customer.GetCustomer().customerName} losing patience...");
                 customer.DecreasePatience();
                 yield return new WaitForSeconds(0.5f);
             }
         }
         
+        Debug.Log($"Patience phase complete. Customers remaining: {customerCount}");
+        
         // Cek apakah hari sudah selesai
         if (IsDayComplete())
         {
+            Debug.Log("Day is complete! Moving to next day...");
             EndDay();
         }
         else
         {
+            Debug.Log("Day continues. Filling empty seats and starting new turn...");
+            
             // Isi kursi kosong
             FillEmptySeats();
             
@@ -204,16 +254,23 @@ public class GameManager : MonoBehaviour
     bool IsDayComplete()
     {
         // Hari selesai jika deck kosong dan semua kursi kosong
+        Debug.Log($"Checking if day complete. Deck count: {currentDayDeck.Count}");
+        
         if (currentDayDeck.Count > 0)
             return false;
         
+        int activeCount = 0;
         foreach (CustomerInstance customer in activeCustomers)
         {
             if (customer != null)
-                return false;
+            {
+                activeCount++;
+                Debug.Log($"Active customer found: {customer.GetCustomer().customerName}");
+            }
         }
         
-        return true;
+        Debug.Log($"Active customers: {activeCount}");
+        return activeCount == 0;
     }
     
     void EndDay()

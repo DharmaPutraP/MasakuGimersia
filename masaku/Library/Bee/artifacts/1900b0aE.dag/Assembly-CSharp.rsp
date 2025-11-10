@@ -361,6 +361,7 @@
 "Assets/Scripts/GameManager.cs"
 "Assets/Scripts/GameSetup.cs"
 "Assets/Scripts/KitchenLocationManager.cs"
+"Assets/Scripts/LookAtCamera.cs"
 "Assets/Scripts/MasakuCardManager.cs"
 "Assets/Scripts/MasakuUI.cs"
 "Assets/Scripts/PlayerMovement.cs"

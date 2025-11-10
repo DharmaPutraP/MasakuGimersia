@@ -10,7 +10,8 @@ public class CustomerInstance : MonoBehaviour
     public int seatIndex; // Kursi mana (0-3)
     
     [Header("UI References")]
-    public SpriteRenderer customerSprite;
+    public SpriteRenderer customerSprite; // Keep for backward compatibility
+    public Animator customerAnimator; // NEW: Animator for customer animations
     public Transform patienceBarTransform;
     public TextMeshProUGUI orderDisplayText; // NEW: Text to show order
     
@@ -23,9 +24,17 @@ public class CustomerInstance : MonoBehaviour
         seatIndex = seat;
         isServed = false;
         
+        // Use sprite renderer if no animator
         if (customerSprite != null && customer.customerSprite != null)
         {
             customerSprite.sprite = customer.customerSprite;
+        }
+        
+        // Play sitting animation
+        if (customerAnimator != null)
+        {
+            customerAnimator.SetTrigger("Sit");
+            // Or use: customerAnimator.Play("Sitting");
         }
         
         UpdatePatienceBar();
@@ -51,13 +60,17 @@ public class CustomerInstance : MonoBehaviour
     {
         if (isServed) return;
         
+        int oldPatience = currentPatience;
         currentPatience -= customerData.patienceDecayPerTurn;
         currentPatience = Mathf.Max(0, currentPatience);
+        
+        Debug.Log($"{customerData.customerName} patience: {oldPatience} → {currentPatience} (max: {customerData.maxPatience})");
         
         UpdatePatienceBar();
         
         if (currentPatience <= 0)
         {
+            Debug.Log($"{customerData.customerName} patience reached 0! Leaving angry...");
             OnCustomerAngry();
         }
     }
@@ -128,6 +141,13 @@ public class CustomerInstance : MonoBehaviour
         isServed = true;
         Debug.Log($"{customerData.customerName} puas! Memberikan +{customerData.focusReward} Fokus");
         
+        // Play cheering animation
+        if (customerAnimator != null)
+        {
+            customerAnimator.SetTrigger("Cheer");
+            // Or use: customerAnimator.Play("Cheering");
+        }
+        
         // Berikan reward fokus
         GameManager.Instance.AddFocus(customerData.focusReward);
         
@@ -159,8 +179,17 @@ public class CustomerInstance : MonoBehaviour
     
     IEnumerator CustomerLeaveHappy()
     {
-        // Animasi customer pergi
-        yield return new WaitForSeconds(1f);
+        // Wait for cheer animation to play
+        yield return new WaitForSeconds(1.5f);
+        
+        // Optional: Play leaving animation
+        if (customerAnimator != null)
+        {
+            customerAnimator.SetTrigger("Leave");
+            // Or use: customerAnimator.Play("Leaving");
+            yield return new WaitForSeconds(0.5f);
+        }
+        
         Destroy(gameObject);
     }
     
@@ -177,5 +206,10 @@ public class CustomerInstance : MonoBehaviour
     public bool IsServed()
     {
         return isServed;
+    }
+    
+    public Customer GetCustomer()
+    {
+        return customerData;
     }
 }
