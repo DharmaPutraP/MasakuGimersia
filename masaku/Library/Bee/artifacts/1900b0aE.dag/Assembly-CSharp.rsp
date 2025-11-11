@@ -357,6 +357,7 @@
 "Assets/Scripts/CardManager.cs"
 "Assets/Scripts/CardUI.cs"
 "Assets/Scripts/Customer.cs"
+"Assets/Scripts/CustomerEntranceManager.cs"
 "Assets/Scripts/CustomerInstance.cs"
 "Assets/Scripts/GameManager.cs"
 "Assets/Scripts/GameSetup.cs"

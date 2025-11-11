@@ -1319,7 +1319,6 @@ Transform:
   - {fileID: 1970056384}
   - {fileID: 781407586}
   - {fileID: 483978091}
-  - {fileID: 2108570681}
   - {fileID: 1222801621}
   - {fileID: 1767597141}
   - {fileID: 359567145}
@@ -6025,6 +6024,7 @@ Transform:
   - {fileID: 172298342}
   - {fileID: 753888836}
   - {fileID: 73149487}
+  - {fileID: 2108570681}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &695133778
@@ -12039,6 +12039,37 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!1 &1410546984
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1410546985}
+  m_Layer: 0
+  m_Name: EntranceSpawn
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1410546985
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1410546984}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 10.9, y: 0.367, z: -2.51}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1423624190
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -15618,7 +15649,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1842360960
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17331,6 +17362,58 @@ MonoBehaviour:
   curseCard: {fileID: 11400000, guid: f2376a1cb5902b444b81a7a16c7de506, type: 2}
   maxHandSize: 5
   playerMovement: {fileID: 2128327028}
+--- !u!1 &2030598407
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2030598409}
+  - component: {fileID: 2030598408}
+  m_Layer: 0
+  m_Name: CustomerEntranceManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2030598408
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2030598407}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf7d36669861cc14bbdb528e7f1180c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  doorTransform: {fileID: 2108570681}
+  doorPosition: {fileID: 2108570681}
+  entranceSpawnPoint: {fileID: 1410546985}
+  doorOpenRotation: 0
+  doorClosedRotation: 90
+  doorRotationSpeed: 2
+  customerWalkSpeed: 2
+  customerRotationOffset: 0
+--- !u!4 &2030598409
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2030598407}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 7.141529, y: 0.49565896, z: -1.8972315}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2033123798
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18131,19 +18214,19 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 166925869}
+    m_TransformParent: {fileID: 685099476}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: ac2508fc950524b5fb8fc0c7f3157d3b, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 7.2588987
+      value: 19.57024
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: ac2508fc950524b5fb8fc0c7f3157d3b, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 4.242858
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: ac2508fc950524b5fb8fc0c7f3157d3b, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -3.4166737
+      value: -7.097502
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: ac2508fc950524b5fb8fc0c7f3157d3b, type: 3}
       propertyPath: m_LocalRotation.w
@@ -18547,3 +18630,5 @@ SceneRoots:
   - {fileID: 685099476}
   - {fileID: 2027071845}
   - {fileID: 2128327029}
+  - {fileID: 2030598409}
+  - {fileID: 1410546985}

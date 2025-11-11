@@ -24,6 +24,15 @@ public class GameManager : MonoBehaviour
     {
         return activeCustomers;
     }
+    
+    public void SetCustomerAtSeat(int seatIndex, CustomerInstance customer)
+    {
+        if (seatIndex >= 0 && seatIndex < activeCustomers.Length)
+        {
+            activeCustomers[seatIndex] = customer;
+        }
+    }
+    
     private Queue<Customer> currentDayDeck = new Queue<Customer>();
     
     [Header("Day Configuration")]
@@ -145,20 +154,37 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // Rotate to face camera (adjust rotation as needed for your setup)
-        Quaternion faceCamera = Quaternion.Euler(0, 180, 0); // Adjust Y rotation: 0, 90, 180, or 270
-        
-        GameObject customerObj = Instantiate(prefabToSpawn, customerSeats[seatIndex].position, faceCamera, customerSeats[seatIndex]);
-        CustomerInstance instance = customerObj.GetComponent<CustomerInstance>();
-        
-        if (instance != null)
+        // Check if entrance manager exists for animated entrance
+        if (CustomerEntranceManager.Instance != null)
         {
-            instance.Initialize(customer, seatIndex);
-            activeCustomers[seatIndex] = instance;
+            // Use entrance animation system
+            CustomerEntranceManager.Instance.QueueCustomerEntrance(
+                prefabToSpawn, 
+                customer, 
+                seatIndex, 
+                customerSeats[seatIndex]
+            );
+            
+            // Reserve the seat immediately (the actual instance will be set after entrance animation)
+            activeCustomers[seatIndex] = null; // Will be set by entrance manager
+            Debug.Log($"Queued {customer.customerName} for entrance animation to seat {seatIndex}");
         }
         else
         {
-            Debug.LogError($"Customer prefab for {customer.customerName} is missing CustomerInstance component!");
+            // Fallback: Instant spawn (old behavior)
+            Quaternion faceCamera = Quaternion.Euler(0, 180, 0);
+            GameObject customerObj = Instantiate(prefabToSpawn, customerSeats[seatIndex].position, faceCamera, customerSeats[seatIndex]);
+            CustomerInstance instance = customerObj.GetComponent<CustomerInstance>();
+            
+            if (instance != null)
+            {
+                instance.Initialize(customer, seatIndex);
+                activeCustomers[seatIndex] = instance;
+            }
+            else
+            {
+                Debug.LogError($"Customer prefab for {customer.customerName} is missing CustomerInstance component!");
+            }
         }
     }
     
