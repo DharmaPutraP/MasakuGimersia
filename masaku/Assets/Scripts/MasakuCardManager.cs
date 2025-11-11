@@ -73,6 +73,7 @@ public class MasakuCardManager : MonoBehaviour
     {
         int cardsToDraw = maxHandSize - hand.Count;
         DrawCards(cardsToDraw);
+        SortHand(); // Sort hand after drawing
     }
     
     public void DrawCards(int count)
@@ -103,6 +104,14 @@ public class MasakuCardManager : MonoBehaviour
                 break;
             }
         }
+        
+        SortHand(); // Sort hand after drawing cards
+    }
+    
+    void SortHand()
+    {
+        // Sort by CardType enum order
+        hand.Sort((a, b) => a.cardType.CompareTo(b.cardType));
     }
     
     void ReshuffleDiscardPile()
@@ -260,6 +269,35 @@ public class MasakuCardManager : MonoBehaviour
             GameManager.Instance.AddCardToPreparation(card.cardType);
             
             Debug.Log($"Kartu dieksekusi: {card.cardName}");
+        }
+        
+        // After all cards executed, move to serving counter
+        if (playerMovement != null)
+        {
+            Vector3 servingPos = KitchenLocationManager.Instance.GetLocationPosition("ServingCounter");
+            if (servingPos != Vector3.zero)
+            {
+                Debug.Log("→ Bergerak ke Serving Counter untuk menyajikan pesanan");
+                
+                // Create a dummy card for serving counter movement
+                ActionCard servingCard = ScriptableObject.CreateInstance<ActionCard>();
+                servingCard.targetTag = "ServingCounter";
+                servingCard.pickupTag = "";
+                
+                playerMovement.MoveToLocation(servingPos, servingCard);
+                
+                // Wait for movement to serving counter to complete
+                while (playerMovement.IsMoving())
+                {
+                    yield return null;
+                }
+                
+                Debug.Log("✓ Sampai di Serving Counter!");
+            }
+            else
+            {
+                Debug.LogWarning("ServingCounter location not found!");
+            }
         }
         
         // Move cards from hand to discard pile (remove in reverse order to preserve indices)

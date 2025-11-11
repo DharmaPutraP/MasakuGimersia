@@ -12,7 +12,9 @@ public class CustomerInstance : MonoBehaviour
     [Header("UI References")]
     public SpriteRenderer customerSprite; // Keep for backward compatibility
     public Animator customerAnimator; // NEW: Animator for customer animations
-    public Transform patienceBarTransform;
+    public Transform patienceBarTransform; // The foreground bar that scales
+    public Transform patienceBarBackground; // Optional: Background bar
+    public SpriteRenderer patienceBarSprite; // To change color based on patience
     public TextMeshProUGUI orderDisplayText; // NEW: Text to show order
     
     private bool isServed = false;
@@ -195,12 +197,35 @@ public class CustomerInstance : MonoBehaviour
     
     void UpdatePatienceBar()
     {
-        // Update visual patience bar
-        if (patienceBarTransform != null)
+        if (patienceBarTransform == null) return;
+        
+        // Calculate patience percentage
+        float patiencePercent = (float)currentPatience / customerData.maxPatience;
+        
+        // Update bar scale
+        patienceBarTransform.localScale = new Vector3(patiencePercent, 1f, 1f);
+        
+        // Change bar color based on patience level
+        if (patienceBarSprite != null)
         {
-            float patiencePercent = (float)currentPatience / customerData.maxPatience;
-            patienceBarTransform.localScale = new Vector3(patiencePercent, 1f, 1f);
+            if (patiencePercent > 0.6f)
+            {
+                // High patience - Green
+                patienceBarSprite.color = new Color(0.2f, 0.8f, 0.2f); // Green
+            }
+            else if (patiencePercent > 0.3f)
+            {
+                // Medium patience - Yellow
+                patienceBarSprite.color = new Color(1f, 0.9f, 0.2f); // Yellow
+            }
+            else
+            {
+                // Low patience - Red
+                patienceBarSprite.color = new Color(0.9f, 0.2f, 0.2f); // Red
+            }
         }
+        
+        Debug.Log($"{customerData.customerName} patience bar: {patiencePercent * 100:F0}%");
     }
     
     public bool IsServed()

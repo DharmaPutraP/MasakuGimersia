@@ -105,6 +105,8 @@ MonoBehaviour:
   currentPatience: 10
   seatIndex: 0
   customerSprite: {fileID: 0}
-  customerAnimator: {fileID: 0}
+  customerAnimator: {fileID: 8574596680781671905}
   patienceBarTransform: {fileID: 0}
+  patienceBarBackground: {fileID: 0}
+  patienceBarSprite: {fileID: 0}
   orderDisplayText: {fileID: 0}

@@ -250,7 +250,21 @@ public class MasakuUI : MonoBehaviour
         ActionCard card = hand[handIndex];
         Debug.Log($"Card clicked: {card.cardName}");
         
-        // Toggle selection by index
+        // Check if it's a special card (like Tarik Nafas)
+        if (card.isSpecialCard)
+        {
+            Debug.Log($"Playing special card: {card.cardName}");
+            // Play special card immediately
+            bool success = MasakuCardManager.Instance.PlayCard(card);
+            if (success)
+            {
+                // Update hand display after playing special card
+                UpdateHandDisplay();
+            }
+            return;
+        }
+        
+        // Toggle selection by index for normal cards
         if (MasakuCardManager.Instance.IsCardSelected(handIndex))
         {
             Debug.Log($"Deselecting card at index: {handIndex}");
