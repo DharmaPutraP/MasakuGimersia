@@ -207,13 +207,15 @@ public class MasakuUI : MonoBehaviour
                 cardImage.raycastTarget = true;
                 // Debug.Log($"Set card image for: {card.cardName}, Raycast Target: {cardImage.raycastTarget}");
                 
-                // Highlight if selected (add yellow tint) - now using index
+                // Scale up if selected instead of color change
                 if (MasakuCardManager.Instance.IsCardSelected(index))
                 {
-                    cardImage.color = new Color(1f, 1f, 0.5f, 1f); // Yellow tint
+                    cardUI.transform.localScale = Vector3.one * 1.2f; // Scale up by 20%
+                    cardImage.color = Color.white; // Keep normal color
                 }
                 else
                 {
+                    cardUI.transform.localScale = Vector3.one; // Normal scale
                     cardImage.color = Color.white; // Normal color
                 }
             }
