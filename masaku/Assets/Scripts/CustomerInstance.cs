@@ -81,15 +81,15 @@ public class CustomerInstance : MonoBehaviour
     {
         Debug.Log($"{customerData.customerName} pergi dengan marah!");
         
-        // Kurangi reputasi
-        GameManager.Instance.LoseReputation(1);
-        
-        // Jika Barbarian, tambahkan curse
+        // Jika Barbarian, tambahkan curse dan kurangi reputasi ekstra
         if (customerData.isBarbarian)
         {
             Debug.Log("Barbarian menambahkan CURSE ke deck Anda!");
             GameManager.Instance.AddCurseCard();
         }
+        
+        // Kurangi reputasi (normal customer leaving)
+        GameManager.Instance.LoseReputation(1);
         
         // Hapus customer dari kursi
         GameManager.Instance.RemoveCustomer(seatIndex);

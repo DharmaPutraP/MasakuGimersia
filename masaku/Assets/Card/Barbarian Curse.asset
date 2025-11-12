@@ -22,3 +22,6 @@ MonoBehaviour:
   isSpecialCard: 1
   discardCount: 0
   drawCount: 0
+  focusGrant: 0
+  isCurseCard: 1
+  isBoonCard: 0

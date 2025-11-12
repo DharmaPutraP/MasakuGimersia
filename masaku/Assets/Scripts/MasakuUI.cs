@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -13,8 +14,9 @@ public class MasakuUI : MonoBehaviour
     public Image focusBar;
     
     [Header("Reputation Display")]
-    public TextMeshProUGUI reputationText;
-    public GameObject[] reputationHearts;
+    public Image[] reputationStars; // Array of 5 star Image components
+    public Sprite starOnSprite; // Star filled/active sprite
+    public Sprite starOffSprite; // Star empty/inactive sprite
     
     [Header("Day Display")]
     public TextMeshProUGUI dayText;
@@ -23,6 +25,12 @@ public class MasakuUI : MonoBehaviour
     public Transform handContainer;
     public GameObject cardUIPrefab;
     private List<GameObject> cardUIObjects = new List<GameObject>();
+    
+    [Header("Fan Layout Settings")]
+    public float fanSpread = 30f; // Total angle spread of the fan (degrees)
+    public float fanRadius = 300f; // How far down the cards are positioned
+    public float cardVerticalOffset = 50f; // How much cards lift up in the center
+    public Vector3 fanCenterPosition = new Vector3(0, -200, 0); // Center position of the fan
     
     [Header("Preparation Station Display")]
     public Transform preparationContainer;
@@ -42,8 +50,12 @@ public class MasakuUI : MonoBehaviour
     public GameObject barbarianMenuPrefab; // Prefab for Barbarian menu
     
     private List<GameObject> activeMenus = new List<GameObject>(); // Track created menus
+    private Dictionary<GameObject, int> menuToSeatIndex = new Dictionary<GameObject, int>(); // Map menu to seat index
     
     private int selectedSeat = -1;
+    private bool isExecutingOrder = false; // Flag to prevent interactions during execution
+    private bool isTarikNafasMode = false; // Flag for Tarik Nafas card selection mode
+    private int tarikNafasCardIndex = -1; // Index of the Tarik Nafas card being played
     
     void Awake()
     {
@@ -116,19 +128,35 @@ public class MasakuUI : MonoBehaviour
     
     void UpdateReputationDisplay()
     {
-        if (reputationText != null)
+        // Update star visuals
+        if (reputationStars != null && reputationStars.Length > 0)
         {
-            reputationText.text = $"Reputasi: {GameManager.Instance.reputation}/5";
+            int currentReputation = GameManager.Instance.reputation;
+            
+            for (int i = 0; i < reputationStars.Length; i++)
+            {
+                if (reputationStars[i] != null)
+                {
+                    // Show star ON if within current reputation, otherwise show star OFF
+                    if (i < currentReputation)
+                    {
+                        reputationStars[i].sprite = starOnSprite;
+                        reputationStars[i].color = Color.white; // Full opacity
+                    }
+                    else
+                    {
+                        reputationStars[i].sprite = starOffSprite;
+                        reputationStars[i].color = new Color(1f, 1f, 1f, 0.5f); // Slightly transparent
+                    }
+                }
+            }
+            
+            Debug.Log($"Updated reputation display: {currentReputation}/5 stars");
         }
-        
-        // Update hearts visual
-        // for (int i = 0; i < reputationHearts.Length; i++)
-        // {
-        //     if (reputationHearts[i] != null)
-        //     {
-        //         reputationHearts[i].SetActive(i < GameManager.Instance.reputation);
-        //     }
-        // }
+        else
+        {
+            Debug.LogWarning("Reputation stars array is not set up!");
+        }
     }
     
     void UpdateDayDisplay()
@@ -185,6 +213,35 @@ public class MasakuUI : MonoBehaviour
         
         Debug.Log($"Created CardUI for: {card.cardName}, GameObject: {cardUI.name}, Active: {cardUI.activeInHierarchy}");
         
+        // === FAN LAYOUT CALCULATION ===
+        int handSize = MasakuCardManager.Instance.GetHand().Count;
+        
+        // Calculate angle for this card
+        float angleStep = handSize > 1 ? fanSpread / (handSize - 1) : 0;
+        float cardAngle = (index * angleStep) - (fanSpread / 2f); // -15 to +15 for 5 cards with 30° spread
+        
+        // Calculate position on arc
+        float angleRad = cardAngle * Mathf.Deg2Rad;
+        float x = Mathf.Sin(angleRad) * fanRadius;
+        float y = -Mathf.Cos(angleRad) * fanRadius;
+        
+        // Add vertical offset (cards in center are higher)
+        float normalizedPosition = Mathf.Abs((index - (handSize - 1) / 2f) / (handSize / 2f)); // 0 at center, 1 at edges
+        float verticalLift = cardVerticalOffset * (1f - normalizedPosition);
+        y += verticalLift;
+        
+        // Apply position
+        RectTransform rectTransform = cardUI.GetComponent<RectTransform>();
+        if (rectTransform != null)
+        {
+            rectTransform.anchoredPosition = fanCenterPosition + new Vector3(x, y, 0);
+            rectTransform.localRotation = Quaternion.Euler(0, 0, -cardAngle); // Rotate card to follow fan
+            
+            // Set card to be in front based on index (right cards on top)
+            rectTransform.SetAsLastSibling();
+        }
+        // === END FAN LAYOUT ===
+        
         // Get Button component (Button has an Image component built-in)
         Button cardButton = cardUI.GetComponent<Button>();
         
@@ -192,8 +249,21 @@ public class MasakuUI : MonoBehaviour
         {
             // Debug.Log($"Button found! Interactable: {cardButton.interactable}");
             
-            // Make sure button is interactable
-            cardButton.interactable = true;
+            // Curse cards should not be interactable
+            if (card.isCurseCard)
+            {
+                cardButton.interactable = false;
+                
+                // Keep curse button color unchanged when disabled
+                ColorBlock colors = cardButton.colors;
+                colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 1f); // Gray but visible
+                cardButton.colors = colors;
+            }
+            else
+            {
+                // Make sure button is interactable for non-curse cards
+                cardButton.interactable = true;
+            }
             
             // Get the Image component from the Button
             Image cardImage = cardButton.GetComponent<Image>();
@@ -207,11 +277,40 @@ public class MasakuUI : MonoBehaviour
                 cardImage.raycastTarget = true;
                 // Debug.Log($"Set card image for: {card.cardName}, Raycast Target: {cardImage.raycastTarget}");
                 
-                // Scale up if selected instead of color change
-                if (MasakuCardManager.Instance.IsCardSelected(index))
+                // Visual feedback for Tarik Nafas mode
+                if (isTarikNafasMode && index == tarikNafasCardIndex)
                 {
-                    cardUI.transform.localScale = Vector3.one * 1.2f; // Scale up by 20%
-                    cardImage.color = Color.white; // Keep normal color
+                    // Highlight the Tarik Nafas card being played
+                    cardUI.transform.localScale = Vector3.one * 1.3f;
+                    cardImage.color = new Color(0.5f, 1f, 0.5f); // Greenish tint
+                }
+                // Visual feedback for curse cards (cannot be played)
+                else if (card.isCurseCard)
+                {
+                    cardUI.transform.localScale = Vector3.one * 0.9f; // Slightly smaller
+                    cardImage.color = new Color(0.5f, 0.5f, 0.5f, 1f); // Grayed out but opaque
+                }
+                // Check if selected (for both boon and normal cards)
+                else if (MasakuCardManager.Instance.IsCardSelected(index))
+                {
+                    if (card.isBoonCard)
+                    {
+                        // Selected boon card: even larger and brighter
+                        cardUI.transform.localScale = Vector3.one * 1.3f;
+                        cardImage.color = new Color(1f, 1f, 0.5f, 1f); // Bright yellow
+                    }
+                    else
+                    {
+                        // Selected normal card
+                        cardUI.transform.localScale = Vector3.one * 1.2f; // Scale up by 20%
+                        cardImage.color = Color.white; // Keep normal color
+                    }
+                }
+                // Visual feedback for unselected boon cards (glowing effect)
+                else if (card.isBoonCard)
+                {
+                    cardUI.transform.localScale = Vector3.one * 1.15f; // Slightly larger
+                    cardImage.color = new Color(1f, 0.9f, 0.3f, 1f); // Golden/yellow glow
                 }
                 else
                 {
@@ -238,6 +337,13 @@ public class MasakuUI : MonoBehaviour
     
     void OnCardClicked(int handIndex)
     {
+        // Prevent interaction during execution
+        if (isExecutingOrder)
+        {
+            Debug.Log("Cannot select cards during order execution!");
+            return;
+        }
+        
         Debug.Log($"===== CARD CLICKED! Index: {handIndex} =====");
         
         List<ActionCard> hand = MasakuCardManager.Instance.GetHand();
@@ -250,21 +356,72 @@ public class MasakuUI : MonoBehaviour
         ActionCard card = hand[handIndex];
         Debug.Log($"Card clicked: {card.cardName}");
         
-        // Check if it's a special card (like Tarik Nafas)
-        if (card.isSpecialCard)
+        // Prevent clicking curse cards
+        if (card.isCurseCard)
         {
-            Debug.Log($"Playing special card: {card.cardName}");
-            // Play special card immediately
-            bool success = MasakuCardManager.Instance.PlayCard(card);
+            Debug.Log("Cannot play or select curse cards!");
+            return;
+        }
+        
+        // Check if it's a special card (like Tarik Nafas) - NOT boon cards
+        if (card.isSpecialCard && !card.isBoonCard)
+        {
+            // If already in Tarik Nafas mode, cancel it
+            if (isTarikNafasMode && handIndex == tarikNafasCardIndex)
+            {
+                Debug.Log("Cancelling Tarik Nafas mode");
+                isTarikNafasMode = false;
+                tarikNafasCardIndex = -1;
+                UpdateHandDisplay();
+                return;
+            }
+            
+            Debug.Log($"Tarik Nafas card clicked! Now select a card to discard.");
+            
+            // Enter Tarik Nafas mode - player must select a card to discard
+            isTarikNafasMode = true;
+            tarikNafasCardIndex = handIndex;
+            
+            // Visual feedback - scale up the Tarik Nafas card
+            UpdateHandDisplay();
+            return;
+        }
+        
+        // If in Tarik Nafas mode, this card will be discarded
+        if (isTarikNafasMode)
+        {
+            // Cannot discard curse cards
+            if (card.isCurseCard)
+            {
+                Debug.Log("Cannot discard curse cards!");
+                return;
+            }
+            
+            // Cannot discard boon cards
+            if (card.isBoonCard)
+            {
+                Debug.Log("Cannot discard boon cards!");
+                return;
+            }
+            
+            Debug.Log($"Discarding {card.cardName} and playing Tarik Nafas");
+            
+            // Play the Tarik Nafas card with the selected card to discard
+            bool success = MasakuCardManager.Instance.PlayTarikNafas(tarikNafasCardIndex, handIndex);
+            
             if (success)
             {
-                // Update hand display after playing special card
+                // Exit Tarik Nafas mode
+                isTarikNafasMode = false;
+                tarikNafasCardIndex = -1;
+                
+                // Update hand display
                 UpdateHandDisplay();
             }
             return;
         }
         
-        // Toggle selection by index for normal cards
+        // Toggle selection by index for normal cards AND boon cards
         if (MasakuCardManager.Instance.IsCardSelected(handIndex))
         {
             Debug.Log($"Deselecting card at index: {handIndex}");
@@ -327,6 +484,14 @@ public class MasakuUI : MonoBehaviour
         
         Debug.Log($"=== Updating Customer Menus: {activeCustomers.Length} seats ===");
         
+        // Only clear card selection if NOT currently executing an order
+        // (prevents clearing selection mid-execution when new customer arrives)
+        if (!isExecutingOrder)
+        {
+            MasakuCardManager.Instance.ClearSelection();
+            selectedSeat = -1;
+        }
+        
         // Destroy all existing menus
         foreach (GameObject menu in activeMenus)
         {
@@ -334,6 +499,7 @@ public class MasakuUI : MonoBehaviour
                 Destroy(menu);
         }
         activeMenus.Clear();
+        menuToSeatIndex.Clear(); // Clear seat mapping
         
         // Create menu for each active customer
         int menuCount = 0;
@@ -354,6 +520,7 @@ public class MasakuUI : MonoBehaviour
                         // Instantiate menu
                         GameObject menuInstance = Instantiate(menuPrefab, customerMenuContainer);
                         activeMenus.Add(menuInstance);
+                        menuToSeatIndex[menuInstance] = i; // Map this menu to its seat index
                         menuCount++;
                         
                         Debug.Log($"Created menu for {customer.customerName} at seat {i}");
@@ -403,6 +570,15 @@ public class MasakuUI : MonoBehaviour
         }
         
         Debug.Log($"Total menus created: {menuCount}");
+        
+        // Restore selection scales after recreating menus
+        UpdateMenuScales();
+        
+        // Update button states based on whether there are customers
+        UpdateButtonStates();
+        
+        // Update hand display to reflect cleared selection
+        UpdateHandDisplay();
     }
     
     GameObject GetMenuPrefabForCustomerType(CustomerType type)
@@ -435,24 +611,140 @@ public class MasakuUI : MonoBehaviour
     
     void OnSeatSelected(int seatIndex)
     {
-        selectedSeat = seatIndex;
-        Debug.Log($"Kursi {seatIndex} dipilih");
-        
-        // Highlight selected seat (optional visual feedback)
-        for (int i = 0; i < seatButtons.Length; i++)
+        // Prevent interaction during execution
+        if (isExecutingOrder)
         {
-            // Add visual feedback here
+            Debug.Log("Cannot select seats during order execution!");
+            return;
         }
+        
+        // Toggle selection: if clicking the same seat, deselect it
+        if (selectedSeat == seatIndex)
+        {
+            selectedSeat = -1;
+            Debug.Log($"Kursi {seatIndex} dibatalkan");
+        }
+        else
+        {
+            selectedSeat = seatIndex;
+            Debug.Log($"Kursi {seatIndex} dipilih");
+        }
+        
+        // Update menu scales based on selection
+        UpdateMenuScales();
+    }
+    
+    void UpdateMenuScales()
+    {
+        // Scale menus based on current selection
+        foreach (GameObject menu in activeMenus)
+        {
+            if (menu != null && menuToSeatIndex.ContainsKey(menu))
+            {
+                RectTransform menuRect = menu.GetComponent<RectTransform>();
+                if (menuRect != null)
+                {
+                    int menuSeat = menuToSeatIndex[menu];
+                    
+                    if (menuSeat == selectedSeat && selectedSeat >= 0)
+                    {
+                        // Scale up selected menu
+                        menuRect.localScale = Vector3.one * 1.2f;
+                    }
+                    else
+                    {
+                        // Normal scale for others (including deselected)
+                        menuRect.localScale = Vector3.one;
+                    }
+                }
+            }
+        }
+    }
+    
+    void UpdateButtonStates()
+    {
+        // Check if there are any active customers
+        bool hasCustomers = activeMenus.Count > 0;
+        
+        // Keep buttons disabled during execution, even if customers are present
+        bool shouldEnable = hasCustomers && !isExecutingOrder;
+        
+        // Disable submit and end turn buttons if no customers or if executing
+        if (submitOrderButton != null)
+        {
+            submitOrderButton.interactable = shouldEnable;
+        }
+        
+        if (endTurnButton != null)
+        {
+            endTurnButton.interactable = shouldEnable;
+        }
+        
+        Debug.Log($"Buttons enabled: {shouldEnable} (Active menus: {activeMenus.Count}, Executing: {isExecutingOrder})");
+    }
+    
+    void SetUIInteractable(bool interactable)
+    {
+        // Don't enable buttons if there are no customers
+        bool hasCustomers = activeMenus.Count > 0;
+        
+        // Enable/disable submit and end turn buttons
+        if (submitOrderButton != null)
+        {
+            submitOrderButton.interactable = interactable && hasCustomers;
+        }
+        
+        if (endTurnButton != null)
+        {
+            endTurnButton.interactable = interactable && hasCustomers;
+        }
+        
+        // Enable/disable all card buttons WITHOUT changing color
+        foreach (GameObject cardObj in cardUIObjects)
+        {
+            if (cardObj != null)
+            {
+                Button cardButton = cardObj.GetComponent<Button>();
+                if (cardButton != null)
+                {
+                    cardButton.interactable = interactable;
+                    
+                    // Keep button colors unchanged when disabled
+                    ColorBlock colors = cardButton.colors;
+                    colors.disabledColor = Color.white; // Same as normal color
+                    cardButton.colors = colors;
+                }
+            }
+        }
+        
+        // Enable/disable all menu buttons WITHOUT changing color
+        foreach (GameObject menu in activeMenus)
+        {
+            if (menu != null)
+            {
+                Button menuButton = menu.GetComponent<Button>();
+                if (menuButton == null)
+                {
+                    menuButton = menu.GetComponentInChildren<Button>();
+                }
+                
+                if (menuButton != null)
+                {
+                    menuButton.interactable = interactable;
+                    
+                    // Keep button colors unchanged when disabled
+                    ColorBlock colors = menuButton.colors;
+                    colors.disabledColor = Color.white; // Same as normal color
+                    menuButton.colors = colors;
+                }
+            }
+        }
+        
+        Debug.Log($"UI Interactable set to: {interactable}");
     }
     
     void OnSubmitOrderClicked()
     {
-        if (selectedSeat < 0)
-        {
-            Debug.LogWarning("Pilih kursi customer terlebih dahulu!");
-            return;
-        }
-        
         // Check if cards are selected
         List<ActionCard> selectedCards = MasakuCardManager.Instance.GetSelectedCards();
         if (selectedCards.Count == 0)
@@ -461,12 +753,65 @@ public class MasakuUI : MonoBehaviour
             return;
         }
         
-        // Start executing selected cards
-        StartCoroutine(ExecuteAndSubmitOrder());
+        // Check if only boon cards are selected (no customer needed)
+        bool allBoonCards = selectedCards.All(c => c.isBoonCard);
+        
+        if (allBoonCards)
+        {
+            Debug.Log("Playing boon cards only - no customer selection needed");
+            StartCoroutine(ExecuteBoonCards());
+        }
+        else
+        {
+            // Normal cards need customer selection
+            if (selectedSeat < 0)
+            {
+                Debug.LogWarning("Pilih kursi customer terlebih dahulu!");
+                return;
+            }
+            
+            // Start executing selected cards
+            StartCoroutine(ExecuteAndSubmitOrder());
+        }
+    }
+    
+    IEnumerator ExecuteBoonCards()
+    {
+        // Set flag to prevent interactions
+        isExecutingOrder = true;
+        
+        // Disable all interactive buttons
+        SetUIInteractable(false);
+        
+        // Get selected boon cards
+        List<ActionCard> selectedCards = MasakuCardManager.Instance.GetSelectedCards();
+        
+        // Play each boon card
+        foreach (ActionCard card in selectedCards)
+        {
+            if (card.isBoonCard)
+            {
+                MasakuCardManager.Instance.PlayCard(card);
+                yield return new WaitForSeconds(0.3f); // Small delay between boons
+            }
+        }
+        
+        // Update hand display
+        UpdateHandDisplay();
+        
+        // Re-enable interactions
+        isExecutingOrder = false;
+        SetUIInteractable(true);
     }
     
     IEnumerator ExecuteAndSubmitOrder()
     {
+        // Set flag to prevent interactions
+        isExecutingOrder = true;
+        
+        // Disable all interactive buttons
+        SetUIInteractable(false);
+        
         // Execute all selected cards
         yield return StartCoroutine(MasakuCardManager.Instance.ExecuteSelectedCards());
         
@@ -482,6 +827,10 @@ public class MasakuUI : MonoBehaviour
             // Update customer menus after serving (customer may have left)
             UpdateCustomerMenus();
         }
+        
+        // Re-enable interactions
+        isExecutingOrder = false;
+        SetUIInteractable(true);
     }
     
     void OnEndTurnClicked()

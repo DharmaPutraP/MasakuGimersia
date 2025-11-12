@@ -19,6 +19,7 @@ public class GameManager : MonoBehaviour
     public Transform[] customerSeats; // 4 kursi
     public GameObject customerPrefab;
     private CustomerInstance[] activeCustomers = new CustomerInstance[4];
+    private bool[] seatReserved = new bool[4]; // Track if seat is reserved during entrance animation
     
     public CustomerInstance[] GetActiveCustomers()
     {
@@ -30,7 +31,17 @@ public class GameManager : MonoBehaviour
         if (seatIndex >= 0 && seatIndex < activeCustomers.Length)
         {
             activeCustomers[seatIndex] = customer;
+            seatReserved[seatIndex] = false; // Seat is now filled, not just reserved
         }
+    }
+    
+    public bool IsSeatAvailable(int seatIndex)
+    {
+        if (seatIndex < 0 || seatIndex >= activeCustomers.Length)
+            return false;
+        
+        // Seat is available if no customer AND not reserved
+        return activeCustomers[seatIndex] == null && !seatReserved[seatIndex];
     }
     
     private Queue<Customer> currentDayDeck = new Queue<Customer>();
@@ -122,11 +133,14 @@ public class GameManager : MonoBehaviour
         
         for (int i = 0; i < customerSeats.Length; i++)
         {
-            if (activeCustomers[i] == null && currentDayDeck.Count > 0)
+            // Only spawn if seat is truly available (not occupied and not reserved)
+            if (IsSeatAvailable(i) && currentDayDeck.Count > 0)
             {
                 Customer nextCustomer = currentDayDeck.Dequeue();
                 SpawnCustomer(nextCustomer, i);
                 customersSpawned = true;
+                
+                Debug.Log($"Spawning {nextCustomer.customerName} at seat {i}. Remaining in deck: {currentDayDeck.Count}");
             }
         }
         
@@ -157,6 +171,9 @@ public class GameManager : MonoBehaviour
         // Check if entrance manager exists for animated entrance
         if (CustomerEntranceManager.Instance != null)
         {
+            // Reserve the seat immediately to prevent double-spawning
+            seatReserved[seatIndex] = true;
+            
             // Use entrance animation system
             CustomerEntranceManager.Instance.QueueCustomerEntrance(
                 prefabToSpawn, 
@@ -165,9 +182,7 @@ public class GameManager : MonoBehaviour
                 customerSeats[seatIndex]
             );
             
-            // Reserve the seat immediately (the actual instance will be set after entrance animation)
-            activeCustomers[seatIndex] = null; // Will be set by entrance manager
-            Debug.Log($"Queued {customer.customerName} for entrance animation to seat {seatIndex}");
+            Debug.Log($"Queued {customer.customerName} for entrance animation to seat {seatIndex} (seat now reserved)");
         }
         else
         {
@@ -285,6 +300,13 @@ public class GameManager : MonoBehaviour
         if (currentDayDeck.Count > 0)
             return false;
         
+        // Check if there are customers waiting to enter
+        if (CustomerEntranceManager.Instance != null && CustomerEntranceManager.Instance.HasCustomersWaiting())
+        {
+            Debug.Log("Customers still waiting in entrance queue");
+            return false;
+        }
+        
         int activeCount = 0;
         foreach (CustomerInstance customer in activeCustomers)
         {
@@ -314,9 +336,52 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            // Lanjut ke hari berikutnya
-            StartCoroutine(PrepareNextDay());
+            // Automatic transition to next day with fade
+            StartCoroutine(TransitionToNextDay());
         }
+    }
+    
+    IEnumerator TransitionToNextDay()
+    {
+        Debug.Log("Starting day transition...");
+        
+        // Fade out
+        if (ScreenFade.Instance != null)
+        {
+            yield return ScreenFade.Instance.FadeOut();
+        }
+        else
+        {
+            // Fallback if no fade system
+            yield return new WaitForSeconds(0.5f);
+        }
+        
+        // Prepare next day while screen is dark
+        currentDay++;
+        
+        // Reset deck kartu aksi
+        if (cardManager != null)
+        {
+            cardManager.ResetDeck();
+        }
+        
+        // Load new day deck
+        LoadDayDeck(currentDay);
+        
+        // Small delay while black
+        yield return new WaitForSeconds(0.5f);
+        
+        // Fade in
+        if (ScreenFade.Instance != null)
+        {
+            yield return ScreenFade.Instance.FadeIn();
+        }
+        
+        Debug.Log($"=== HARI {currentDay} DIMULAI ===");
+        
+        // Fill seats and start new day
+        FillEmptySeats();
+        StartPlayerTurn();
     }
     
     IEnumerator PrepareNextDay()
@@ -381,6 +446,27 @@ public class GameManager : MonoBehaviour
         if (seatIndex >= 0 && seatIndex < activeCustomers.Length)
         {
             activeCustomers[seatIndex] = null;
+            seatReserved[seatIndex] = false; // Clear reservation
+            Debug.Log($"Seat {seatIndex} is now empty and available");
+            
+            // Update UI to remove customer menu
+            if (MasakuUI.Instance != null)
+            {
+                MasakuUI.Instance.UpdateCustomerMenus();
+            }
+            
+            // Check if day is complete after removing customer
+            CheckAndEndDayIfComplete();
+        }
+    }
+    
+    void CheckAndEndDayIfComplete()
+    {
+        // Check if day is complete and trigger transition
+        if (IsDayComplete())
+        {
+            Debug.Log("All customers served! Day complete - automatically transitioning...");
+            EndDay();
         }
     }
     

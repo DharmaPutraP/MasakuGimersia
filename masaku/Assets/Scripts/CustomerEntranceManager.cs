@@ -218,4 +218,10 @@ public class CustomerEntranceManager : MonoBehaviour
         doorTransform.rotation = targetRotation;
         Debug.Log($"Door rotated to Y: {targetYRotation}°");
     }
+    
+    // Public method to check if there are customers waiting to enter
+    public bool HasCustomersWaiting()
+    {
+        return entranceQueue.Count > 0 || isProcessingEntrance;
+    }
 }

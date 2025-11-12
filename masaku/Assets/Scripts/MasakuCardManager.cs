@@ -24,6 +24,9 @@ public class MasakuCardManager : MonoBehaviour
     [Header("Card Selection")]
     private List<int> selectedIndices = new List<int>(); // Track by hand index instead of card reference
     
+    [Header("Curse Mechanic")]
+    private bool hasPermanentCurse = false; // Barbarian curse active for this day
+    
     void Awake()
     {
         if (Instance == null)
@@ -76,11 +79,35 @@ public class MasakuCardManager : MonoBehaviour
         SortHand(); // Sort hand after drawing
     }
     
-    public void DrawCards(int count)
+    public void DrawCards(int count, bool allowExceedMax = false)
     {
+        // If permanent curse is active but not in hand, add it first (only once)
+        if (hasPermanentCurse && curseCard != null)
+        {
+            // Count how many curse cards are already in hand
+            int curseCount = hand.Count(c => c == curseCard);
+            
+            if (curseCount == 0 && hand.Count < maxHandSize)
+            {
+                hand.Add(curseCard);
+                Debug.Log("Curse card automatically added to hand (permanent effect)");
+            }
+            else if (curseCount > 1)
+            {
+                // Remove duplicates if somehow they exist
+                Debug.LogWarning($"Found {curseCount} curse cards in hand! Removing duplicates...");
+                while (hand.Count(c => c == curseCard) > 1)
+                {
+                    int duplicateIndex = hand.FindLastIndex(c => c == curseCard);
+                    hand.RemoveAt(duplicateIndex);
+                }
+            }
+        }
+        
         for (int i = 0; i < count; i++)
         {
-            if (hand.Count >= maxHandSize)
+            // Only check max hand size if not allowed to exceed
+            if (!allowExceedMax && hand.Count >= maxHandSize)
             {
                 Debug.Log("Tangan sudah penuh!");
                 break;
@@ -95,6 +122,15 @@ public class MasakuCardManager : MonoBehaviour
             {
                 ActionCard drawnCard = deck[0];
                 deck.RemoveAt(0);
+                
+                // Don't draw curse card if permanent curse is active (it's already in hand)
+                if (hasPermanentCurse && drawnCard == curseCard)
+                {
+                    Debug.Log("Skipping curse card draw (already permanent in hand)");
+                    i--; // Don't count this as a drawn card
+                    continue;
+                }
+                
                 hand.Add(drawnCard);
                 Debug.Log($"Tarik kartu: {drawnCard.cardName}");
             }
@@ -136,6 +172,13 @@ public class MasakuCardManager : MonoBehaviour
         
         ActionCard card = hand[handIndex];
         
+        // Prevent selecting curse cards
+        if (card.isCurseCard)
+        {
+            Debug.LogWarning("Cannot select curse cards!");
+            return false;
+        }
+        
         // Check if already selected
         if (selectedIndices.Contains(handIndex))
         {
@@ -143,11 +186,21 @@ public class MasakuCardManager : MonoBehaviour
             return false;
         }
         
-        // Check if special card
-        if (card.isSpecialCard)
+        // Check if special card (like Tarik Nafas - these have their own flow)
+        // BUT allow boon cards to be selected normally
+        if (card.isSpecialCard && !card.isBoonCard)
         {
             Debug.LogWarning("Kartu spesial tidak bisa digunakan untuk combo!");
             return false;
+        }
+        
+        // Boon cards can be selected (will be played via submit button)
+        // They don't cost focus
+        if (card.isBoonCard)
+        {
+            selectedIndices.Add(handIndex);
+            Debug.Log($"Boon card selected: {card.cardName}");
+            return true;
         }
         
         // Check focus
@@ -229,7 +282,16 @@ public class MasakuCardManager : MonoBehaviour
         {
             if (idx >= 0 && idx < hand.Count)
             {
-                cardsToExecute.Add(hand[idx]);
+                ActionCard card = hand[idx];
+                
+                // Skip curse cards (safety check)
+                if (card.isCurseCard)
+                {
+                    Debug.LogWarning($"Skipping curse card at index {idx}");
+                    continue;
+                }
+                
+                cardsToExecute.Add(card);
             }
         }
         
@@ -301,12 +363,21 @@ public class MasakuCardManager : MonoBehaviour
         }
         
         // Move cards from hand to discard pile (remove in reverse order to preserve indices)
+        // But protect curse cards from being removed
         sortedIndices.Sort((a, b) => b.CompareTo(a)); // Sort descending
         foreach (int idx in sortedIndices)
         {
             if (idx >= 0 && idx < hand.Count)
             {
                 ActionCard card = hand[idx];
+                
+                // Don't remove curse cards from hand
+                if (hasPermanentCurse && card == curseCard)
+                {
+                    Debug.Log("Protecting curse card from removal");
+                    continue;
+                }
+                
                 hand.RemoveAt(idx);
                 discardPile.Add(card);
             }
@@ -326,12 +397,22 @@ public class MasakuCardManager : MonoBehaviour
             return false;
         }
         
-        // Cek apakah kartu spesial (Tarik Nafas)
+        // Cek apakah kartu spesial (Tarik Nafas, Wizard Boon)
         if (card.isSpecialCard)
         {
             ExecuteSpecialCard(card);
             hand.Remove(card);
-            discardPile.Add(card);
+            
+            // Boon cards disappear after use (don't go to discard)
+            if (card.isBoonCard)
+            {
+                Debug.Log($"{card.cardName} digunakan dan hilang (one-time use)");
+                // Card is removed from game completely
+            }
+            else
+            {
+                discardPile.Add(card);
+            }
             return true;
         }
         
@@ -367,6 +448,13 @@ public class MasakuCardManager : MonoBehaviour
     {
         Debug.Log($"Memainkan kartu spesial: {card.cardName}");
         
+        // Grant focus if card has it (Wizard Boon Focus)
+        if (card.focusGrant > 0)
+        {
+            GameManager.Instance.AddFocus(card.focusGrant);
+            Debug.Log($"+{card.focusGrant} Focus dari {card.cardName}!");
+        }
+        
         // Tarik Nafas: Buang 1 kartu, tarik 1 kartu
         if (card.discardCount > 0 && hand.Count > 1)
         {
@@ -380,11 +468,68 @@ public class MasakuCardManager : MonoBehaviour
             }
         }
         
-        // Tarik kartu baru
+        // Tarik kartu baru (Wizard Boon Draw or Tarik Nafas)
         if (card.drawCount > 0)
         {
-            DrawCards(card.drawCount);
+            // Boon cards can exceed max hand size
+            bool canExceedMax = card.isBoonCard;
+            DrawCards(card.drawCount, canExceedMax);
+            
+            if (canExceedMax)
+            {
+                Debug.Log($"Wizard Boon: Drew {card.drawCount} cards (can exceed hand limit)");
+            }
         }
+    }
+    
+    // New method for player-controlled Tarik Nafas
+    public bool PlayTarikNafas(int tarikNafasIndex, int discardIndex)
+    {
+        if (tarikNafasIndex < 0 || tarikNafasIndex >= hand.Count)
+        {
+            Debug.LogError("Invalid Tarik Nafas card index!");
+            return false;
+        }
+        
+        if (discardIndex < 0 || discardIndex >= hand.Count)
+        {
+            Debug.LogError("Invalid discard card index!");
+            return false;
+        }
+        
+        if (tarikNafasIndex == discardIndex)
+        {
+            Debug.LogWarning("Cannot discard the Tarik Nafas card itself! Choose another card.");
+            return false;
+        }
+        
+        ActionCard tarikNafasCard = hand[tarikNafasIndex];
+        ActionCard discardCard = hand[discardIndex];
+        
+        if (!tarikNafasCard.isSpecialCard)
+        {
+            Debug.LogError("Selected card is not Tarik Nafas!");
+            return false;
+        }
+        
+        Debug.Log($"Playing Tarik Nafas: Discarding {discardCard.cardName}");
+        
+        // Remove the discard card from hand
+        hand.Remove(discardCard);
+        discardPile.Add(discardCard);
+        
+        // Remove Tarik Nafas card from hand
+        hand.Remove(tarikNafasCard);
+        discardPile.Add(tarikNafasCard);
+        
+        // Draw new card(s)
+        if (tarikNafasCard.drawCount > 0)
+        {
+            DrawCards(tarikNafasCard.drawCount);
+        }
+        
+        Debug.Log($"Tarik Nafas complete! Discarded {discardCard.cardName}, drew {tarikNafasCard.drawCount} new card(s)");
+        return true;
     }
     
     public void PlayCardByIndex(int handIndex)
@@ -397,21 +542,42 @@ public class MasakuCardManager : MonoBehaviour
     
     public void DiscardHand()
     {
-        while (hand.Count > 0)
+        // Create a copy to iterate (avoid modification during iteration)
+        List<ActionCard> cardsToDiscard = new List<ActionCard>(hand);
+        
+        foreach (ActionCard card in cardsToDiscard)
         {
-            ActionCard card = hand[0];
-            hand.RemoveAt(0);
+            // Keep curse card in hand if permanent curse is active
+            if (hasPermanentCurse && card == curseCard)
+            {
+                Debug.Log("Curse card stays in hand (permanent effect)");
+                continue; // Skip discarding the curse
+            }
+            
+            hand.Remove(card);
             discardPile.Add(card);
         }
-        Debug.Log("Semua kartu di tangan dibuang");
+        
+        Debug.Log($"Kartu dibuang. Curse tetap di tangan: {hasPermanentCurse}");
     }
     
     public void AddCurseToDiscard()
     {
         if (curseCard != null)
         {
-            discardPile.Add(curseCard);
-            Debug.Log("Kartu CURSE ditambahkan ke discard pile!");
+            // NEW: Add curse permanently to hand instead of discard pile
+            hasPermanentCurse = true;
+            
+            // Add to hand immediately if there's space
+            if (hand.Count < maxHandSize)
+            {
+                hand.Add(curseCard);
+                Debug.Log("Kartu CURSE ditambahkan ke tangan Anda secara permanen untuk hari ini!");
+            }
+            else
+            {
+                Debug.Log("Tangan penuh! Curse akan ditambahkan saat ada ruang.");
+            }
         }
     }
     
@@ -427,6 +593,56 @@ public class MasakuCardManager : MonoBehaviour
     public void ResetDeck()
     {
         InitializeDeck();
+        RemoveCurse(); // Remove curse when day resets
+        RemoveBoonCards(); // Remove all boon cards when day resets
+    }
+    
+    public void RemoveCurse()
+    {
+        if (hasPermanentCurse && curseCard != null)
+        {
+            hasPermanentCurse = false;
+            
+            // Remove curse from hand
+            if (hand.Contains(curseCard))
+            {
+                hand.Remove(curseCard);
+                Debug.Log("Curse removed from hand (new day)");
+            }
+            
+            // Remove curse from deck if somehow there
+            while (deck.Contains(curseCard))
+            {
+                deck.Remove(curseCard);
+            }
+            
+            // Remove curse from discard pile
+            while (discardPile.Contains(curseCard))
+            {
+                discardPile.Remove(curseCard);
+            }
+            
+            Debug.Log("Barbarian curse effect removed - new day!");
+        }
+    }
+    
+    public void RemoveBoonCards()
+    {
+        // Remove all boon cards from hand
+        int removedFromHand = hand.RemoveAll(c => c.isBoonCard);
+        
+        // Remove all boon cards from deck
+        int removedFromDeck = deck.RemoveAll(c => c.isBoonCard);
+        
+        // Remove all boon cards from discard pile
+        int removedFromDiscard = discardPile.RemoveAll(c => c.isBoonCard);
+        
+        int totalRemoved = removedFromHand + removedFromDeck + removedFromDiscard;
+        
+        if (totalRemoved > 0)
+        {
+            Debug.Log($"Removed {totalRemoved} unused boon card(s) - new day!");
+        }
     }
     
     public List<ActionCard> GetHand()
