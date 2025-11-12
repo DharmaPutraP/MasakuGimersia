@@ -53,7 +53,7 @@ public class MasakuUI : MonoBehaviour
     public AudioSource audioSource; // AudioSource for UI sounds
     public AudioClip buttonClickSound; // Sound for Submit and End Turn buttons
     public AudioClip cardSelectSound; // Sound when selecting a card
-    public AudioClip tarikNafasSound; // Sound when using Tarik Nafas card
+    public AudioClip tarikNafasSound; // Sound when using Tarik Nafas cards
     
     private List<GameObject> activeMenus = new List<GameObject>(); // Track created menus
     private Dictionary<GameObject, int> menuToSeatIndex = new Dictionary<GameObject, int>(); // Map menu to seat index
