@@ -12,6 +12,14 @@ public class PlayerMovement : MonoBehaviour
     [Header("Animation")]
     public Animator animator;
     
+    [Header("Location Animations")]
+    public Animator knifeAnimator; // Animator for the knife at cutting board
+    public Animator stoveAnimator; // Animator for the stove
+    
+    [Header("Stove Particle Effects")]
+    public ParticleSystem stoveFireParticle; // Fire particle system at stove
+    public ParticleSystem stoveSmokeParticle; // Smoke particle system at stove
+    
     private Vector3 targetPosition;
     private bool isMoving = false;
     private bool isWaiting = false; // NEW: Flag to prevent movement during wait
@@ -236,22 +244,95 @@ public class PlayerMovement : MonoBehaviour
         {
             case CardType.PotongSayuran:
                 Debug.Log("Memotong sayuran...");
-                // Tambahkan animasi atau efek memotong sayuran
+                // Trigger knife animation ONLY at cutting board
+                if (currentActionCard.targetTag.Contains("CuttingBoard") && knifeAnimator != null)
+                {
+                    knifeAnimator.SetBool("Cut", true);
+                }
                 StartCoroutine(PerformAction("Potong Sayuran", 2f));
                 break;
                 
             case CardType.PotongDaging:
                 Debug.Log("Memotong daging...");
+                // Trigger knife animation ONLY at cutting board
+                if (currentActionCard.targetTag.Contains("CuttingBoard") && knifeAnimator != null)
+                {
+                    knifeAnimator.SetBool("Cut", true);
+                }
                 StartCoroutine(PerformAction("Potong Daging", 2f));
                 break;
                 
             case CardType.PanaskanAir:
                 Debug.Log("Memanaskan air...");
+                // Trigger stove animation ONLY at stove
+                if (currentActionCard.targetTag.Contains("Stove") && stoveAnimator != null)
+                {
+                    stoveAnimator.SetBool("Cook", true);
+                }
+                // Start particle effects (ensure GameObject is active, stop and clear first, then play)
+                if (currentActionCard.targetTag.Contains("Stove") && stoveFireParticle != null)
+                {
+                    Debug.Log("Starting fire particle...");
+                    stoveFireParticle.gameObject.SetActive(true); // Make sure GameObject is active
+                    stoveFireParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                    stoveFireParticle.Clear(); // Extra clear
+                    stoveFireParticle.Play(true); // Play with children
+                    Debug.Log($"Fire particle playing: {stoveFireParticle.isPlaying}, isEmitting: {stoveFireParticle.isEmitting}");
+                }
+                else
+                {
+                    Debug.LogWarning("Fire particle is NULL! Assign it in Inspector.");
+                }
+                if (stoveSmokeParticle != null)
+                {
+                    Debug.Log("Starting smoke particle...");
+                    stoveSmokeParticle.gameObject.SetActive(true); // Make sure GameObject is active
+                    stoveSmokeParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                    stoveSmokeParticle.Clear(); // Extra clear
+                    stoveSmokeParticle.Play(true); // Play with children
+                    Debug.Log($"Smoke particle playing: {stoveSmokeParticle.isPlaying}, isEmitting: {stoveSmokeParticle.isEmitting}");
+                }
+                else
+                {
+                    Debug.LogWarning("Smoke particle is NULL! Assign it in Inspector.");
+                }
                 StartCoroutine(PerformAction("Panaskan Air", 3f));
                 break;
                 
             case CardType.PanaskanDaging:
                 Debug.Log("Memanaskan daging...");
+                // Trigger stove animation
+                if (stoveAnimator != null)
+                {
+                    stoveAnimator.SetBool("Cook", true);
+                }
+                // Start particle effects (ensure GameObject is active, stop and clear first, then play)
+                if (currentActionCard.targetTag.Contains("Stove") && stoveFireParticle != null)
+                {
+                    Debug.Log("Starting fire particle...");
+                    stoveFireParticle.gameObject.SetActive(true); // Make sure GameObject is active
+                    stoveFireParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                    stoveFireParticle.Clear(); // Extra clear
+                    stoveFireParticle.Play(true); // Play with children
+                    Debug.Log($"Fire particle playing: {stoveFireParticle.isPlaying}, isEmitting: {stoveFireParticle.isEmitting}");
+                }
+                else if (stoveFireParticle == null)
+                {
+                    Debug.LogWarning("Fire particle is NULL! Assign it in Inspector.");
+                }
+                if (currentActionCard.targetTag.Contains("Stove") && stoveSmokeParticle != null)
+                {
+                    Debug.Log("Starting smoke particle...");
+                    stoveSmokeParticle.gameObject.SetActive(true); // Make sure GameObject is active
+                    stoveSmokeParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                    stoveSmokeParticle.Clear(); // Extra clear
+                    stoveSmokeParticle.Play(true); // Play with children
+                    Debug.Log($"Smoke particle playing: {stoveSmokeParticle.isPlaying}, isEmitting: {stoveSmokeParticle.isEmitting}");
+                }
+                else if (stoveSmokeParticle == null)
+                {
+                    Debug.LogWarning("Smoke particle is NULL! Assign it in Inspector.");
+                }
                 StartCoroutine(PerformAction("Panaskan Daging", 3f));
                 break;
                 
@@ -272,6 +353,36 @@ public class PlayerMovement : MonoBehaviour
         Debug.Log($"Melakukan: {actionName}");
         yield return new WaitForSeconds(duration);
         Debug.Log($"Selesai: {actionName}");
+        
+        // Stop animations based on action type
+        if (actionName.Contains("Potong"))
+        {
+            // Stop knife cutting animation
+            if (knifeAnimator != null)
+            {
+                knifeAnimator.SetBool("Cut", false);
+            }
+        }
+        
+        // Stop stove particle effects and animation after cooking actions
+        if (actionName.Contains("Panaskan"))
+        {
+            // Stop stove animation
+            if (stoveAnimator != null)
+            {
+                stoveAnimator.SetBool("Cook", false);
+            }
+            
+            // Stop particles
+            if (stoveFireParticle != null)
+            {
+                stoveFireParticle.Stop();
+            }
+            if (stoveSmokeParticle != null)
+            {
+                stoveSmokeParticle.Stop();
+            }
+        }
         
         // Bisa tambahkan reward atau efek setelah selesai
     }
