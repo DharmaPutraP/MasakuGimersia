@@ -17,6 +17,11 @@ public class CustomerInstance : MonoBehaviour
     public SpriteRenderer patienceBarSprite; // To change color based on patience
     public TextMeshProUGUI orderDisplayText; // NEW: Text to show order
     
+    [Header("Sound Effects")]
+    public AudioSource audioSource; // AudioSource for customer sounds
+    public AudioClip barbarianAngrySound; // Sound when Barbarian gets angry
+    public AudioClip wizardHappySound; // Sound when Wizard is satisfied (magical sound)
+    
     private bool isServed = false;
     
     public void Initialize(Customer customer, int seat)
@@ -85,6 +90,10 @@ public class CustomerInstance : MonoBehaviour
         if (customerData.isBarbarian)
         {
             Debug.Log("Barbarian menambahkan CURSE ke deck Anda!");
+            
+            // Play Barbarian angry sound
+            PlaySound(barbarianAngrySound);
+            
             GameManager.Instance.AddCurseCard();
         }
         
@@ -157,6 +166,10 @@ public class CustomerInstance : MonoBehaviour
         if (customerData.isWizard && currentPatience > 5)
         {
             Debug.Log("Wizard memberikan BOON!");
+            
+            // Play Wizard happy/magical sound (limited to 3-4 seconds)
+            PlaySoundLimited(wizardHappySound, Random.Range(3f, 4f));
+            
             GameManager.Instance.GiveWizardBoon();
         }
         
@@ -236,5 +249,56 @@ public class CustomerInstance : MonoBehaviour
     public Customer GetCustomer()
     {
         return customerData;
+    }
+    
+    // Helper method to play customer sounds
+    void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            audioSource.PlayOneShot(clip);
+            Debug.Log($"Playing customer sound: {clip.name}");
+        }
+        else if (clip == null)
+        {
+            Debug.LogWarning("Customer sound clip is not assigned!");
+        }
+        else if (audioSource == null)
+        {
+            Debug.LogWarning("AudioSource is not assigned in CustomerInstance!");
+        }
+    }
+    
+    // Helper method to play sound with time limit
+    void PlaySoundLimited(AudioClip clip, float duration)
+    {
+        if (audioSource != null && clip != null)
+        {
+            audioSource.clip = clip;
+            audioSource.Play();
+            Debug.Log($"Playing customer sound (limited to {duration}s): {clip.name}");
+            
+            // Stop the sound after duration
+            StartCoroutine(StopSoundAfterDelay(duration));
+        }
+        else if (clip == null)
+        {
+            Debug.LogWarning("Customer sound clip is not assigned!");
+        }
+        else if (audioSource == null)
+        {
+            Debug.LogWarning("AudioSource is not assigned in CustomerInstance!");
+        }
+    }
+    
+    // Coroutine to stop sound after delay
+    IEnumerator StopSoundAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (audioSource != null && audioSource.isPlaying)
+        {
+            audioSource.Stop();
+            Debug.Log("Wizard sound stopped after time limit");
+        }
     }
 }

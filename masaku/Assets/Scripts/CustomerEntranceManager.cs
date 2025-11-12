@@ -18,6 +18,10 @@ public class CustomerEntranceManager : MonoBehaviour
     public float customerWalkSpeed = 2f;
     public float customerRotationOffset = 0f; // Adjust if character faces wrong direction while walking
     
+    [Header("Sound Effects")]
+    public AudioSource audioSource; // AudioSource for door sounds
+    public AudioClip doorOpenSound; // Sound when door opens
+    
     private Queue<CustomerEntranceData> entranceQueue = new Queue<CustomerEntranceData>();
     private bool isProcessingEntrance = false;
     
@@ -105,6 +109,10 @@ public class CustomerEntranceManager : MonoBehaviour
         if (doorTransform != null)
         {
             Debug.Log($"2. Door opening from {doorTransform.eulerAngles.y}° to {doorOpenRotation}°");
+            
+            // Play door open sound
+            PlaySound(doorOpenSound);
+            
             yield return StartCoroutine(RotateDoor(doorOpenRotation));
         }
         else
@@ -149,6 +157,10 @@ public class CustomerEntranceManager : MonoBehaviour
         if (doorTransform != null)
         {
             Debug.Log("8. Door closing...");
+            
+            // Play door close sound
+            PlaySound(doorOpenSound);
+            
             yield return StartCoroutine(RotateDoor(doorClosedRotation));
         }
         
@@ -223,5 +235,23 @@ public class CustomerEntranceManager : MonoBehaviour
     public bool HasCustomersWaiting()
     {
         return entranceQueue.Count > 0 || isProcessingEntrance;
+    }
+    
+    // Helper method to play door sounds
+    void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            audioSource.PlayOneShot(clip);
+            Debug.Log($"Playing door sound: {clip.name}");
+        }
+        else if (clip == null)
+        {
+            Debug.LogWarning("Door sound clip is not assigned!");
+        }
+        else if (audioSource == null)
+        {
+            Debug.LogWarning("AudioSource is not assigned in CustomerEntranceManager!");
+        }
     }
 }

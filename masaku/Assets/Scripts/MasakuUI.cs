@@ -49,6 +49,12 @@ public class MasakuUI : MonoBehaviour
     public GameObject wizardMenuPrefab; // Prefab for Wizard menu
     public GameObject barbarianMenuPrefab; // Prefab for Barbarian menu
     
+    [Header("Sound Effects")]
+    public AudioSource audioSource; // AudioSource for UI sounds
+    public AudioClip buttonClickSound; // Sound for Submit and End Turn buttons
+    public AudioClip cardSelectSound; // Sound when selecting a card
+    public AudioClip tarikNafasSound; // Sound when using Tarik Nafas card
+    
     private List<GameObject> activeMenus = new List<GameObject>(); // Track created menus
     private Dictionary<GameObject, int> menuToSeatIndex = new Dictionary<GameObject, int>(); // Map menu to seat index
     
@@ -378,6 +384,9 @@ public class MasakuUI : MonoBehaviour
             
             Debug.Log($"Tarik Nafas card clicked! Now select a card to discard.");
             
+            // Play Tarik Nafas sound
+            PlaySound(tarikNafasSound);
+            
             // Enter Tarik Nafas mode - player must select a card to discard
             isTarikNafasMode = true;
             tarikNafasCardIndex = handIndex;
@@ -406,6 +415,9 @@ public class MasakuUI : MonoBehaviour
             
             Debug.Log($"Discarding {card.cardName} and playing Tarik Nafas");
             
+            // Play card select sound (discarding)
+            PlaySound(cardSelectSound);
+            
             // Play the Tarik Nafas card with the selected card to discard
             bool success = MasakuCardManager.Instance.PlayTarikNafas(tarikNafasCardIndex, handIndex);
             
@@ -426,11 +438,17 @@ public class MasakuUI : MonoBehaviour
         {
             Debug.Log($"Deselecting card at index: {handIndex}");
             MasakuCardManager.Instance.DeselectCard(handIndex);
+            
+            // Play card select sound
+            PlaySound(cardSelectSound);
         }
         else
         {
             Debug.Log($"Selecting card at index: {handIndex}");
             MasakuCardManager.Instance.SelectCard(handIndex);
+            
+            // Play card select sound
+            PlaySound(cardSelectSound);
         }
         
         // Update UI to show selection
@@ -745,6 +763,9 @@ public class MasakuUI : MonoBehaviour
     
     void OnSubmitOrderClicked()
     {
+        // Play button click sound
+        PlaySound(buttonClickSound);
+        
         // Check if cards are selected
         List<ActionCard> selectedCards = MasakuCardManager.Instance.GetSelectedCards();
         if (selectedCards.Count == 0)
@@ -835,9 +856,21 @@ public class MasakuUI : MonoBehaviour
     
     void OnEndTurnClicked()
     {
+        // Play button click sound
+        PlaySound(buttonClickSound);
+        
         GameManager.Instance.EndPlayerTurn();
         
         // Don't refresh here - hand is empty at this moment
         // UI will refresh when StartPlayerTurn() is called after patience phase
+    }
+    
+    // Helper method to play sound effects
+    void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
     }
 }

@@ -20,6 +20,14 @@ public class PlayerMovement : MonoBehaviour
     public ParticleSystem stoveFireParticle; // Fire particle system at stove
     public ParticleSystem stoveSmokeParticle; // Smoke particle system at stove
     
+    [Header("Sound Effects")]
+    public AudioSource audioSource; // AudioSource for playing sounds
+    public AudioClip walkingSound; // Walking/footsteps sound
+    public AudioClip pickupSound; // Sound when picking up ingredients
+    public AudioClip cuttingSound; // Sound when cutting at cutting board
+    public AudioClip cookingSound; // Sound when cooking at stove
+    public AudioClip servingSound; // Sound when at serving counter
+    
     private Vector3 targetPosition;
     private bool isMoving = false;
     private bool isWaiting = false; // NEW: Flag to prevent movement during wait
@@ -84,6 +92,9 @@ public class PlayerMovement : MonoBehaviour
             {
                 animator.SetBool("IsWalking", true);
             }
+            
+            // Play walking sound
+            PlaySound(walkingSound, true); // Loop walking sound
             
             Debug.Log($"→ Starting movement to: {firstLocation} at position {targetPosition}");
         }
@@ -160,6 +171,9 @@ public class PlayerMovement : MonoBehaviour
             animator.SetBool("IsWalking", false);
         }
         
+        // Stop walking sound
+        StopSound();
+        
         Debug.Log("Sampai di tujuan, berhenti sebentar...");
         
         // Check if there are more locations in queue
@@ -170,6 +184,9 @@ public class PlayerMovement : MonoBehaviour
             {
                 hasPickedUpIngredient = true;
                 Debug.Log($"Mengambil bahan dari: {currentActionCard.pickupTag}");
+                
+                // Play pickup sound
+                PlaySound(pickupSound, false);
                 
                 // Optional: Add pickup animation here
                 if (animator != null)
@@ -184,7 +201,14 @@ public class PlayerMovement : MonoBehaviour
         else
         {
             // No more locations, finish movement
-            Debug.Log($"Sampai di lokasi akhir: {currentActionCard.targetTag}");
+            if (currentActionCard != null)
+            {
+                Debug.Log($"Sampai di lokasi akhir: {currentActionCard.targetTag}");
+            }
+            else
+            {
+                Debug.Log("Sampai di lokasi akhir");
+            }
             
             // Wait before executing action
             StartCoroutine(WaitAndExecuteAction());
@@ -193,7 +217,7 @@ public class PlayerMovement : MonoBehaviour
     
     IEnumerator WaitAndMoveToNextLocation()
     {
-        float waitTime = Random.Range(1.5f, 2f);
+        float waitTime = Random.Range(0.5f, 1f);
         Debug.Log($"Menunggu {waitTime:F1} detik...");
         yield return new WaitForSeconds(waitTime);
         
@@ -212,7 +236,17 @@ public class PlayerMovement : MonoBehaviour
                 animator.SetBool("IsWalking", true);
             }
             
-            Debug.Log($"Melanjutkan ke lokasi: {currentActionCard.targetTag}");
+            // Resume walking sound
+            PlaySound(walkingSound, true);
+            
+            if (currentActionCard != null)
+            {
+                Debug.Log($"Melanjutkan ke lokasi: {currentActionCard.targetTag}");
+            }
+            else
+            {
+                Debug.Log("Melanjutkan ke lokasi berikutnya");
+            }
         }
         else
         {
@@ -222,22 +256,32 @@ public class PlayerMovement : MonoBehaviour
     
     IEnumerator WaitAndExecuteAction()
     {
-        float waitTime = Random.Range(1.5f, 2f);
-        Debug.Log($"Menunggu {waitTime:F1} detik sebelum bekerja...");
-        yield return new WaitForSeconds(waitTime);
+        // Execute action immediately when arriving at final location
+        isWaiting = true; // Keep waiting flag during entire action
         
-        isWaiting = false; // Clear waiting flag
+        // Eksekusi aksi di lokasi and wait for it to complete
+        yield return StartCoroutine(ExecuteActionAtLocation());
         
-        // Eksekusi aksi di lokasi
-        ExecuteActionAtLocation();
+        isWaiting = false; // Clear waiting flag after action completes
         
-        currentActionCard = null;
+        // Don't clear currentActionCard here - let MoveToLocation() handle it
+        // This prevents issues when multiple cards are executed in sequence
         hasPickedUpIngredient = false;
     }
     
-    void ExecuteActionAtLocation()
+    IEnumerator ExecuteActionAtLocation()
     {
-        if (currentActionCard == null) return;
+        if (currentActionCard == null) yield break;
+        
+        // Check if at serving counter (special case - no cardType, just targetTag)
+        if (currentActionCard.targetTag == "ServingCounter")
+        {
+            Debug.Log("Di serving counter, menyajikan pesanan...");
+            // Play serving sound
+            PlaySound(servingSound, false);
+            yield return new WaitForSeconds(1f); // Wait 1 second for serving action
+            yield break;
+        }
         
         // Di sini bisa ditambahkan logika spesifik untuk setiap aksi
         switch (currentActionCard.cardType)
@@ -249,7 +293,9 @@ public class PlayerMovement : MonoBehaviour
                 {
                     knifeAnimator.SetBool("Cut", true);
                 }
-                StartCoroutine(PerformAction("Potong Sayuran", 2f));
+                // Play cutting sound
+                PlaySound(cuttingSound, true); // Loop cutting sound
+                yield return StartCoroutine(PerformAction("Potong Sayuran", 2f));
                 break;
                 
             case CardType.PotongDaging:
@@ -259,7 +305,9 @@ public class PlayerMovement : MonoBehaviour
                 {
                     knifeAnimator.SetBool("Cut", true);
                 }
-                StartCoroutine(PerformAction("Potong Daging", 2f));
+                // Play cutting sound
+                PlaySound(cuttingSound, true); // Loop cutting sound
+                yield return StartCoroutine(PerformAction("Potong Daging", 2f));
                 break;
                 
             case CardType.PanaskanAir:
@@ -269,6 +317,8 @@ public class PlayerMovement : MonoBehaviour
                 {
                     stoveAnimator.SetBool("Cook", true);
                 }
+                // Play cooking sound
+                PlaySound(cookingSound, true); // Loop cooking sound
                 // Start particle effects (ensure GameObject is active, stop and clear first, then play)
                 if (currentActionCard.targetTag.Contains("Stove") && stoveFireParticle != null)
                 {
@@ -296,7 +346,7 @@ public class PlayerMovement : MonoBehaviour
                 {
                     Debug.LogWarning("Smoke particle is NULL! Assign it in Inspector.");
                 }
-                StartCoroutine(PerformAction("Panaskan Air", 3f));
+                yield return StartCoroutine(PerformAction("Panaskan Air", 3f));
                 break;
                 
             case CardType.PanaskanDaging:
@@ -306,6 +356,8 @@ public class PlayerMovement : MonoBehaviour
                 {
                     stoveAnimator.SetBool("Cook", true);
                 }
+                // Play cooking sound
+                PlaySound(cookingSound, true); // Loop cooking sound
                 // Start particle effects (ensure GameObject is active, stop and clear first, then play)
                 if (currentActionCard.targetTag.Contains("Stove") && stoveFireParticle != null)
                 {
@@ -333,7 +385,7 @@ public class PlayerMovement : MonoBehaviour
                 {
                     Debug.LogWarning("Smoke particle is NULL! Assign it in Inspector.");
                 }
-                StartCoroutine(PerformAction("Panaskan Daging", 3f));
+                yield return StartCoroutine(PerformAction("Panaskan Daging", 3f));
                 break;
                 
             case CardType.TarikNafas:
@@ -353,6 +405,9 @@ public class PlayerMovement : MonoBehaviour
         Debug.Log($"Melakukan: {actionName}");
         yield return new WaitForSeconds(duration);
         Debug.Log($"Selesai: {actionName}");
+        
+        // Stop any looping sounds
+        StopSound();
         
         // Stop animations based on action type
         if (actionName.Contains("Potong"))
@@ -398,6 +453,35 @@ public class PlayerMovement : MonoBehaviour
         if (animator != null)
         {
             animator.SetBool("IsWalking", false);
+        }
+        StopSound();
+    }
+    
+    // Helper method to play sound effects
+    void PlaySound(AudioClip clip, bool loop = false)
+    {
+        if (audioSource != null && clip != null)
+        {
+            // Stop current sound if playing
+            if (audioSource.isPlaying)
+            {
+                audioSource.Stop();
+            }
+            
+            audioSource.clip = clip;
+            audioSource.loop = loop;
+            audioSource.Play();
+            Debug.Log($"Playing sound: {clip.name}, Loop: {loop}");
+        }
+    }
+    
+    // Helper method to stop sound effects
+    void StopSound()
+    {
+        if (audioSource != null && audioSource.isPlaying)
+        {
+            audioSource.Stop();
+            Debug.Log("Stopping sound");
         }
     }
 }
