@@ -13,27 +13,27 @@ public class PlayerMovement : MonoBehaviour
     public Animator animator;
     
     [Header("Location Animations")]
-    public Animator knifeAnimator; // Animator for the knife at cutting board
-    public Animator stoveAnimator; // Animator for the stove
+    public Animator knifeAnimator; 
+    public Animator stoveAnimator; 
     
     [Header("Stove Particle Effects")]
-    public ParticleSystem stoveFireParticle; // Fire particle system at stove
-    public ParticleSystem stoveSmokeParticle; // Smoke particle system at stove
+    public ParticleSystem stoveFireParticle; 
+    public ParticleSystem stoveSmokeParticle; 
     
     [Header("Sound Effects")]
-    public AudioSource audioSource; // AudioSource for playing sounds
-    public AudioClip walkingSound; // Walking/footsteps sound
-    public AudioClip pickupSound; // Sound when picking up ingredients
-    public AudioClip cuttingSound; // Sound when cutting at cutting board
-    public AudioClip cookingSound; // Sound when cooking at stove
-    public AudioClip servingSound; // Sound when at serving counter
+    public AudioSource audioSource; 
+    public AudioClip walkingSound; 
+    public AudioClip pickupSound; 
+    public AudioClip cuttingSound; 
+    public AudioClip cookingSound; 
+    public AudioClip servingSound; 
     
     private Vector3 targetPosition;
     private bool isMoving = false;
-    private bool isWaiting = false; // NEW: Flag to prevent movement during wait
+    private bool isWaiting = false; 
     private ActionCard currentActionCard;
     private Queue<Vector3> movementQueue = new Queue<Vector3>();
-    private Queue<string> locationTagQueue = new Queue<string>(); // Track which location we're going to
+    private Queue<string> locationTagQueue = new Queue<string>(); 
     private bool hasPickedUpIngredient = false;
     
     void Update()
@@ -68,7 +68,7 @@ public class PlayerMovement : MonoBehaviour
         if (movementQueue.Count > 0)
         {
             targetPosition = movementQueue.Dequeue();
-            string firstLocation = locationTagQueue.Peek(); // Don't dequeue yet, just peek
+            string firstLocation = locationTagQueue.Peek(); 
             isMoving = true;
             
             if (animator != null)
@@ -76,7 +76,7 @@ public class PlayerMovement : MonoBehaviour
                 animator.SetBool("IsWalking", true);
             }
             
-            PlaySound(walkingSound, true); // Loop walking sound
+            PlaySound(walkingSound, true); 
         }
     }
     
@@ -96,7 +96,7 @@ public class PlayerMovement : MonoBehaviour
         string nextLocation = "";
         if (locationTagQueue.Count > 0)
         {
-            nextLocation = locationTagQueue.Peek(); // Look at next location without removing it
+            nextLocation = locationTagQueue.Peek(); 
         }
         
         if (direction != Vector3.zero)
@@ -131,7 +131,7 @@ public class PlayerMovement : MonoBehaviour
         }
         
         isMoving = false;
-        isWaiting = true; // Set waiting flag
+        isWaiting = true; 
         
         if (animator != null)
         {
@@ -172,7 +172,7 @@ public class PlayerMovement : MonoBehaviour
         float waitTime = Random.Range(0.5f, 1f);
         yield return new WaitForSeconds(waitTime);
         
-        isWaiting = false; // Clear waiting flag
+        isWaiting = false; 
         
         if (movementQueue.Count > 0)
         {
@@ -200,11 +200,11 @@ public class PlayerMovement : MonoBehaviour
     
     IEnumerator WaitAndExecuteAction()
     {
-        isWaiting = true; // Keep waiting flag during entire action
+        isWaiting = true; 
         
         yield return StartCoroutine(ExecuteActionAtLocation());
         
-        isWaiting = false; // Clear waiting flag after action completes
+        isWaiting = false; 
         
         hasPickedUpIngredient = false;
     }
@@ -216,7 +216,7 @@ public class PlayerMovement : MonoBehaviour
         if (currentActionCard.targetTag == "ServingCounter")
         {
             PlaySound(servingSound, false);
-            yield return new WaitForSeconds(1f); // Wait 1 second for serving action
+            yield return new WaitForSeconds(1f); 
             yield break;
         }
         
@@ -227,7 +227,7 @@ public class PlayerMovement : MonoBehaviour
                 {
                     knifeAnimator.SetBool("Cut", true);
                 }
-                PlaySound(cuttingSound, true); // Loop cutting sound
+                PlaySound(cuttingSound, true); 
                 yield return StartCoroutine(PerformAction("Potong Sayuran", 2f));
                 break;
                 
@@ -236,7 +236,7 @@ public class PlayerMovement : MonoBehaviour
                 {
                     knifeAnimator.SetBool("Cut", true);
                 }
-                PlaySound(cuttingSound, true); // Loop cutting sound
+                PlaySound(cuttingSound, true); 
                 yield return StartCoroutine(PerformAction("Potong Daging", 2f));
                 break;
                 
@@ -245,23 +245,23 @@ public class PlayerMovement : MonoBehaviour
                 {
                     stoveAnimator.SetBool("Cook", true);
                 }
-                PlaySound(cookingSound, true); // Loop cooking sound
+                PlaySound(cookingSound, true); 
                 if (currentActionCard.targetTag.Contains("Stove") && stoveFireParticle != null)
                 {
-                    stoveFireParticle.gameObject.SetActive(true); // Make sure GameObject is active
+                    stoveFireParticle.gameObject.SetActive(true); 
                     stoveFireParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-                    stoveFireParticle.Clear(); // Extra clear
-                    stoveFireParticle.Play(true); // Play with children
+                    stoveFireParticle.Clear(); 
+                    stoveFireParticle.Play(true); 
                 }
                 else
                 {
                 }
                 if (stoveSmokeParticle != null)
                 {
-                    stoveSmokeParticle.gameObject.SetActive(true); // Make sure GameObject is active
+                    stoveSmokeParticle.gameObject.SetActive(true); 
                     stoveSmokeParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-                    stoveSmokeParticle.Clear(); // Extra clear
-                    stoveSmokeParticle.Play(true); // Play with children
+                    stoveSmokeParticle.Clear(); 
+                    stoveSmokeParticle.Play(true); 
                 }
                 else
                 {
@@ -274,23 +274,23 @@ public class PlayerMovement : MonoBehaviour
                 {
                     stoveAnimator.SetBool("Cook", true);
                 }
-                PlaySound(cookingSound, true); // Loop cooking sound
+                PlaySound(cookingSound, true); 
                 if (currentActionCard.targetTag.Contains("Stove") && stoveFireParticle != null)
                 {
-                    stoveFireParticle.gameObject.SetActive(true); // Make sure GameObject is active
+                    stoveFireParticle.gameObject.SetActive(true); 
                     stoveFireParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-                    stoveFireParticle.Clear(); // Extra clear
-                    stoveFireParticle.Play(true); // Play with children
+                    stoveFireParticle.Clear(); 
+                    stoveFireParticle.Play(true); 
                 }
                 else if (stoveFireParticle == null)
                 {
                 }
                 if (currentActionCard.targetTag.Contains("Stove") && stoveSmokeParticle != null)
                 {
-                    stoveSmokeParticle.gameObject.SetActive(true); // Make sure GameObject is active
+                    stoveSmokeParticle.gameObject.SetActive(true); 
                     stoveSmokeParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-                    stoveSmokeParticle.Clear(); // Extra clear
-                    stoveSmokeParticle.Play(true); // Play with children
+                    stoveSmokeParticle.Clear(); 
+                    stoveSmokeParticle.Play(true); 
                 }
                 else if (stoveSmokeParticle == null)
                 {
@@ -341,7 +341,7 @@ public class PlayerMovement : MonoBehaviour
     
     public bool IsMoving()
     {
-        return isMoving || isWaiting; // Return true if moving OR waiting
+        return isMoving || isWaiting; 
     }
     
     public void StopMovement()

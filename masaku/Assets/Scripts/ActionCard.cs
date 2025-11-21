@@ -23,8 +23,8 @@ public class ActionCard : ScriptableObject
     public int focusCost;
     
     [Header("Movement Targets")]
-    public string pickupTag; // Tag untuk mengambil bahan (optional)
-    public string targetTag; // Tag lokasi tujuan utama
+    public string pickupTag;
+    public string targetTag;
     
     public Sprite cardImage;
     [TextArea(3, 5)]
@@ -33,7 +33,7 @@ public class ActionCard : ScriptableObject
     public bool isSpecialCard;
     public int discardCount;
     public int drawCount;
-    public int focusGrant; // Focus yang diberikan saat dimainkan (untuk Wizard Boon Focus)
+    public int focusGrant;
     
     public bool isCurseCard;
     

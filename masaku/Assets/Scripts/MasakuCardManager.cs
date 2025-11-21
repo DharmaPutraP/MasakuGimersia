@@ -8,8 +8,8 @@ public class MasakuCardManager : MonoBehaviour
     public static MasakuCardManager Instance;
     
     [Header("Card Setup")]
-    public List<ActionCard> baseActionCards; // 5 kartu dasar
-    public ActionCard curseCard; // Kartu kutukan Barbarian
+    public List<ActionCard> baseActionCards; 
+    public ActionCard curseCard; 
     
     private List<ActionCard> deck = new List<ActionCard>();
     private List<ActionCard> hand = new List<ActionCard>();
@@ -22,10 +22,10 @@ public class MasakuCardManager : MonoBehaviour
     public PlayerMovement playerMovement;
     
     [Header("Card Selection")]
-    private List<int> selectedIndices = new List<int>(); // Track by hand index instead of card reference
+    private List<int> selectedIndices = new List<int>(); 
     
     [Header("Curse Mechanic")]
-    private bool hasPermanentCurse = false; // Barbarian curse active for this day
+    private bool hasPermanentCurse = false; 
     
     private bool shouldPlayShuffleAnimation = false;
     
@@ -73,7 +73,7 @@ public class MasakuCardManager : MonoBehaviour
     {
         int cardsToDraw = maxHandSize - hand.Count;
         DrawCards(cardsToDraw);
-        SortHand(); // Sort hand after drawing
+        SortHand(); 
     }
     
     public void DrawCards(int count, bool allowExceedMax = false)
@@ -115,7 +115,7 @@ public class MasakuCardManager : MonoBehaviour
                 
                 if (hasPermanentCurse && drawnCard == curseCard)
                 {
-                    i--; // Don't count this as a drawn card
+                    i--; 
                     continue;
                 }
                 
@@ -127,7 +127,7 @@ public class MasakuCardManager : MonoBehaviour
             }
         }
         
-        SortHand(); // Sort hand after drawing cards
+        SortHand(); 
     }
     
     void SortHand()
@@ -150,7 +150,7 @@ public class MasakuCardManager : MonoBehaviour
     public bool ShouldPlayShuffleAnimation()
     {
         bool result = shouldPlayShuffleAnimation;
-        shouldPlayShuffleAnimation = false; // Reset flag after checking
+        shouldPlayShuffleAnimation = false; 
         return result;
     }
     
@@ -308,7 +308,7 @@ public class MasakuCardManager : MonoBehaviour
             }
         }
         
-        sortedIndices.Sort((a, b) => b.CompareTo(a)); // Sort descending
+        sortedIndices.Sort((a, b) => b.CompareTo(a)); 
         foreach (int idx in sortedIndices)
         {
             if (idx >= 0 && idx < hand.Count)
@@ -451,7 +451,7 @@ public class MasakuCardManager : MonoBehaviour
         {
             if (hasPermanentCurse && card == curseCard)
             {
-                continue; // Skip discarding the curse
+                continue; 
             }
             
             hand.Remove(card);
@@ -497,8 +497,8 @@ public class MasakuCardManager : MonoBehaviour
         }
         
         ShuffleDeck();
-        RemoveCurse(); // Remove curse when day resets
-        RemoveBoonCards(); // Remove all boon cards when day resets
+        RemoveCurse(); 
+        RemoveBoonCards(); 
     }
     
     public void RemoveCurse()

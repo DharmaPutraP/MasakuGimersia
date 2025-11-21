@@ -11,16 +11,16 @@ public class MainMenuManager : MonoBehaviour
     public Button playButton;
     public Button exitButton;
     public Button tutorialButton;
-    public Button creditTextButton; // Credit text that acts as button
+    public Button creditTextButton; 
 
     [Header("Tutorial System")]
-    public GameObject tutorialPanel; // Main tutorial panel
-    public Image tutorialSlideImage; // Image component to display slides
-    public Sprite[] tutorialSlides; // Array of 10 tutorial slide images
-    public Button tutorialExitBackButton; // Button that acts as Exit (index 0) or Back (index 1+)
-    public Button tutorialNextFinishButton; // Button that acts as Next (index 0 to last-1) or Finish (last)
-    public TextMeshProUGUI exitBackButtonText; // Text component for Exit/Back button
-    public TextMeshProUGUI nextFinishButtonText; // Text component for Next/Finish button
+    public GameObject tutorialPanel; 
+    public Image tutorialSlideImage; 
+    public Sprite[] tutorialSlides; 
+    public Button tutorialExitBackButton; 
+    public Button tutorialNextFinishButton; 
+    public TextMeshProUGUI exitBackButtonText; 
+    public TextMeshProUGUI nextFinishButtonText; 
 
     private int currentSlideIndex = 0;
 
@@ -30,23 +30,23 @@ public class MainMenuManager : MonoBehaviour
     public Button creditExitButton;
     
     [Header("Lose Panel")]
-    public GameObject losePanel; // Panel shown when player loses
-    public Button losePanelCloseButton; // Button to close lose panel
+    public GameObject losePanel; 
+    public Button losePanelCloseButton; 
     
     [Header("Audio")]
-    public AudioSource audioSource; // AudioSource for sound effects
-    public AudioClip winSound; // Sound effect when player wins
-    public AudioClip loseSound; // Sound effect when player loses
+    public AudioSource audioSource; 
+    public AudioClip winSound; 
+    public AudioClip loseSound; 
     
     [Header("Cutscene System")]
-    public GameObject cutscenePanel; // Panel for cutscene
-    public Image cutsceneBackgroundImage; // Black background image
-    public Image cutsceneImage; // Image component to display cutscene sprites
-    public Sprite[] cutsceneSprites; // Array of 3 cutscene sprites (opening)
-    public Sprite endingCutsceneSprite; // Single ending cutscene sprite
-    public float fadeDuration = 1f; // Duration of fade in/out
-    public float displayDuration = 2f; // How long each sprite stays visible
-    private CanvasGroup cutsceneImageCanvasGroup; // CanvasGroup for the image only, not the background
+    public GameObject cutscenePanel; 
+    public Image cutsceneBackgroundImage; 
+    public Image cutsceneImage; 
+    public Sprite[] cutsceneSprites; 
+    public Sprite endingCutsceneSprite; 
+    public float fadeDuration = 1f; 
+    public float displayDuration = 2f; 
+    private CanvasGroup cutsceneImageCanvasGroup; 
     public Image backgroundImagePlay;
     
     void Start()

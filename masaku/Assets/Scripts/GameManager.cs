@@ -13,14 +13,14 @@ public class GameManager : MonoBehaviour
     public int currentFocus = 3;
     public const int BASE_FOCUS = 3;
     public int bonusFocusNextTurn = 0;
-    private bool isDayEnding = false; // Flag to prevent double day end
+    private bool isDayEnding = false; 
     
     [Header("Customer Management")]
-    public List<Customer> allCustomers; // Semua tipe customer
-    public Transform[] customerSeats; // 4 kursi
+    public List<Customer> allCustomers; 
+    public Transform[] customerSeats; 
     public GameObject customerPrefab;
     private CustomerInstance[] activeCustomers = new CustomerInstance[4];
-    private bool[] seatReserved = new bool[4]; // Track if seat is reserved during entrance animation
+    private bool[] seatReserved = new bool[4]; 
     
     public CustomerInstance[] GetActiveCustomers()
     {
@@ -32,7 +32,7 @@ public class GameManager : MonoBehaviour
         if (seatIndex >= 0 && seatIndex < activeCustomers.Length)
         {
             activeCustomers[seatIndex] = customer;
-            seatReserved[seatIndex] = false; // Seat is now filled, not just reserved
+            seatReserved[seatIndex] = false; 
         }
     }
     
@@ -50,7 +50,7 @@ public class GameManager : MonoBehaviour
     public List<DayConfiguration> dayConfigurations;
     
     [Header("Preparation Station")]
-    public List<CardType> preparationStation = new List<CardType>(); // Kombo kartu yang sedang disiapkan
+    public List<CardType> preparationStation = new List<CardType>(); 
     
     [Header("References")]
     public MasakuCardManager cardManager;
@@ -86,7 +86,7 @@ public class GameManager : MonoBehaviour
     public void StartDay(int day)
     {
         currentDay = day;
-        isDayEnding = false; // Reset flag at start of new day
+        isDayEnding = false; 
         LoadDayDeck(day);
         
         FillEmptySeats();
@@ -316,7 +316,7 @@ public class GameManager : MonoBehaviour
         }
         
         currentDay++;
-        isDayEnding = false; // Reset flag for new day
+        isDayEnding = false; 
         
         if (cardManager != null)
         {
@@ -385,7 +385,7 @@ public class GameManager : MonoBehaviour
         if (seatIndex >= 0 && seatIndex < activeCustomers.Length)
         {
             activeCustomers[seatIndex] = null;
-            seatReserved[seatIndex] = false; // Clear reservation
+            seatReserved[seatIndex] = false; 
             if (MasakuUI.Instance != null)
             {
                 MasakuUI.Instance.UpdateCustomerMenus();
@@ -399,7 +399,7 @@ public class GameManager : MonoBehaviour
     {
         if (IsDayComplete() && !isDayEnding)
         {
-            isDayEnding = true; // Set flag to prevent duplicate day end
+            isDayEnding = true; 
             EndDay();
         }
     }

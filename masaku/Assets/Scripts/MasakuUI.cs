@@ -14,9 +14,9 @@ public class MasakuUI : MonoBehaviour
     public Image focusBar;
     
     [Header("Reputation Display")]
-    public Image[] reputationStars; // Array of 5 star Image components
-    public Sprite starOnSprite; // Star filled/active sprite
-    public Sprite starOffSprite; // Star empty/inactive sprite
+    public Image[] reputationStars; 
+    public Sprite starOnSprite; 
+    public Sprite starOffSprite; 
     
     [Header("Day Display")]
     public TextMeshProUGUI dayText;
@@ -27,10 +27,10 @@ public class MasakuUI : MonoBehaviour
     private List<GameObject> cardUIObjects = new List<GameObject>();
     
     [Header("Fan Layout Settings")]
-    public float fanSpread = 30f; // Total angle spread of the fan (degrees)
-    public float fanRadius = 300f; // How far down the cards are positioned
-    public float cardVerticalOffset = 50f; // How much cards lift up in the center
-    public Vector3 fanCenterPosition = new Vector3(0, -200, 0); // Center position of the fan
+    public float fanSpread = 30f; 
+    public float fanRadius = 300f; 
+    public float cardVerticalOffset = 50f; 
+    public Vector3 fanCenterPosition = new Vector3(0, -200, 0); 
     
     [Header("Preparation Station Display")]
     public Transform preparationContainer;
@@ -39,46 +39,46 @@ public class MasakuUI : MonoBehaviour
     [Header("Buttons")]
     public Button submitOrderButton;
     public Button endTurnButton;
-    public Button[] seatButtons; // 4 tombol untuk 4 kursi
+    public Button[] seatButtons; 
     
     [Header("Customer Display")]
-    public Transform[] customerUIPositions; // UI untuk menampilkan customer
-    public Transform customerMenuContainer; // Container to hold dynamically created menus
-    public GameObject knightMenuPrefab; // Prefab for Knight menu
-    public GameObject elfMenuPrefab; // Prefab for Elf menu
-    public GameObject wizardMenuPrefab; // Prefab for Wizard menu
-    public GameObject barbarianMenuPrefab; // Prefab for Barbarian menu
+    public Transform[] customerUIPositions; 
+    public Transform customerMenuContainer; 
+    public GameObject knightMenuPrefab; 
+    public GameObject elfMenuPrefab; 
+    public GameObject wizardMenuPrefab; 
+    public GameObject barbarianMenuPrefab; 
     
     [Header("Sound Effects")]
-    public AudioSource audioSource; // AudioSource for UI sounds
-    public AudioClip buttonClickSound; // Sound for Submit and End Turn buttons
-    public AudioClip cardSelectSound; // Sound when selecting a card
-    public AudioClip tarikNafasSound; // Sound when using Tarik Nafas cards
+    public AudioSource audioSource; 
+    public AudioClip buttonClickSound; 
+    public AudioClip cardSelectSound; 
+    public AudioClip tarikNafasSound; 
     
     [Header("Hint System")]
-    public TextMeshProUGUI hintText; // Text component for displaying hints
-    public CanvasGroup hintCanvasGroup; // For fade in/out animation
-    public float hintFadeDuration = 0.3f; // Duration of fade animation
-    public float hintDisplayDuration = 2f; // How long hint stays visible
+    public TextMeshProUGUI hintText; 
+    public CanvasGroup hintCanvasGroup; 
+    public float hintFadeDuration = 0.3f; 
+    public float hintDisplayDuration = 2f; 
     private Coroutine currentHintCoroutine;
     
     [Header("Pause Menu")]
-    public GameObject pausePanel; // Pause menu panel
-    public Button pauseContinueButton; // Continue button
-    public Button pauseExitButton; // Exit to main menu button
+    public GameObject pausePanel; 
+    public Button pauseContinueButton; 
+    public Button pauseExitButton; 
     private bool isPaused = false;
     
     [Header("Shuffle Animation")]
-    public float shuffleAnimationDuration = 1.0f; // Duration of shuffle animation
+    public float shuffleAnimationDuration = 1.0f; 
     private bool isShuffling = false;
     
-    private List<GameObject> activeMenus = new List<GameObject>(); // Track created menus
-    private Dictionary<GameObject, int> menuToSeatIndex = new Dictionary<GameObject, int>(); // Map menu to seat index
+    private List<GameObject> activeMenus = new List<GameObject>(); 
+    private Dictionary<GameObject, int> menuToSeatIndex = new Dictionary<GameObject, int>(); 
     
     private int selectedSeat = -1;
-    private bool isExecutingOrder = false; // Flag to prevent interactions during execution
-    private bool isTarikNafasMode = false; // Flag for Tarik Nafas card selection mode
-    private int tarikNafasCardIndex = -1; // Index of the Tarik Nafas card being played
+    private bool isExecutingOrder = false; 
+    private bool isTarikNafasMode = false; 
+    private int tarikNafasCardIndex = -1; 
     
     void Awake()
     {
@@ -118,7 +118,7 @@ public class MasakuUI : MonoBehaviour
         }
         
         UpdateUI();
-        UpdateCustomerMenus(); // Initialize customer menus visibility
+        UpdateCustomerMenus(); 
         
         if (hintCanvasGroup != null)
         {
@@ -146,7 +146,7 @@ public class MasakuUI : MonoBehaviour
         UpdateDayDisplay();
         UpdateHandDisplay();
         UpdatePreparationStationDisplay();
-        UpdateCustomerMenus(); // Only update menus when explicitly called
+        UpdateCustomerMenus(); 
     }
     
     void UpdateFocusDisplay()
@@ -171,12 +171,12 @@ public class MasakuUI : MonoBehaviour
                     if (i < currentReputation)
                     {
                         reputationStars[i].sprite = starOnSprite;
-                        reputationStars[i].color = Color.white; // Full opacity
+                        reputationStars[i].color = Color.white; 
                     }
                     else
                     {
                         reputationStars[i].sprite = starOffSprite;
-                        reputationStars[i].color = new Color(1f, 1f, 1f, 0.5f); // Slightly transparent
+                        reputationStars[i].color = new Color(1f, 1f, 1f, 0.5f); 
                     }
                 }
             }
@@ -387,13 +387,13 @@ public class MasakuUI : MonoBehaviour
         int handSize = MasakuCardManager.Instance.GetHand().Count;
         
         float angleStep = handSize > 1 ? fanSpread / (handSize - 1) : 0;
-        float cardAngle = (index * angleStep) - (fanSpread / 2f); // -15 to +15 for 5 cards with 30° spread
+        float cardAngle = (index * angleStep) - (fanSpread / 2f); 
         
         float angleRad = cardAngle * Mathf.Deg2Rad;
         float x = Mathf.Sin(angleRad) * fanRadius;
         float y = -Mathf.Cos(angleRad) * fanRadius;
         
-        float normalizedPosition = Mathf.Abs((index - (handSize - 1) / 2f) / (handSize / 2f)); // 0 at center, 1 at edges
+        float normalizedPosition = Mathf.Abs((index - (handSize - 1) / 2f) / (handSize / 2f)); 
         float verticalLift = cardVerticalOffset * (1f - normalizedPosition);
         y += verticalLift;
         
@@ -401,7 +401,7 @@ public class MasakuUI : MonoBehaviour
         if (rectTransform != null)
         {
             rectTransform.anchoredPosition = fanCenterPosition + new Vector3(x, y, 0);
-            rectTransform.localRotation = Quaternion.Euler(0, 0, -cardAngle); // Rotate card to follow fan
+            rectTransform.localRotation = Quaternion.Euler(0, 0, -cardAngle); 
             
             rectTransform.SetAsLastSibling();
         }
@@ -416,7 +416,7 @@ public class MasakuUI : MonoBehaviour
                 cardButton.interactable = false;
                 
                 ColorBlock colors = cardButton.colors;
-                colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 1f); // Gray but visible
+                colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 1f); 
                 cardButton.colors = colors;
             }
             else
@@ -435,35 +435,35 @@ public class MasakuUI : MonoBehaviour
                 if (isTarikNafasMode && index == tarikNafasCardIndex)
                 {
                     cardUI.transform.localScale = Vector3.one * 1.3f;
-                    cardImage.color = new Color(0.5f, 1f, 0.5f); // Greenish tint
+                    cardImage.color = new Color(0.5f, 1f, 0.5f); 
                 }
                 else if (card.isCurseCard)
                 {
-                    cardUI.transform.localScale = Vector3.one * 0.9f; // Slightly smaller
-                    cardImage.color = new Color(0.5f, 0.5f, 0.5f, 1f); // Grayed out but opaque
+                    cardUI.transform.localScale = Vector3.one * 0.9f; 
+                    cardImage.color = new Color(0.5f, 0.5f, 0.5f, 1f); 
                 }
                 else if (MasakuCardManager.Instance.IsCardSelected(index))
                 {
                     if (card.isBoonCard)
                     {
                         cardUI.transform.localScale = Vector3.one * 1.3f;
-                        cardImage.color = new Color(1f, 1f, 0.5f, 1f); // Bright yellow
+                        cardImage.color = new Color(1f, 1f, 0.5f, 1f); 
                     }
                     else
                     {
-                        cardUI.transform.localScale = Vector3.one * 1.2f; // Scale up by 20%
-                        cardImage.color = Color.white; // Keep normal color
+                        cardUI.transform.localScale = Vector3.one * 1.2f; 
+                        cardImage.color = Color.white; 
                     }
                 }
                 else if (card.isBoonCard)
                 {
-                    cardUI.transform.localScale = Vector3.one * 1.15f; // Slightly larger
-                    cardImage.color = new Color(1f, 0.9f, 0.3f, 1f); // Golden/yellow glow
+                    cardUI.transform.localScale = Vector3.one * 1.15f; 
+                    cardImage.color = new Color(1f, 0.9f, 0.3f, 1f); 
                 }
                 else
                 {
-                    cardUI.transform.localScale = Vector3.one; // Normal scale
-                    cardImage.color = Color.white; // Normal color
+                    cardUI.transform.localScale = Vector3.one; 
+                    cardImage.color = Color.white; 
                 }
             }
             else
@@ -631,7 +631,7 @@ public class MasakuUI : MonoBehaviour
                 Destroy(menu);
         }
         activeMenus.Clear();
-        menuToSeatIndex.Clear(); // Clear seat mapping
+        menuToSeatIndex.Clear(); 
         
         int menuCount = 0;
         for (int i = 0; i < activeCustomers.Length; i++)
@@ -648,7 +648,7 @@ public class MasakuUI : MonoBehaviour
                     {
                         GameObject menuInstance = Instantiate(menuPrefab, customerMenuContainer);
                         activeMenus.Add(menuInstance);
-                        menuToSeatIndex[menuInstance] = i; // Map this menu to its seat index
+                        menuToSeatIndex[menuInstance] = i; 
                         menuCount++;
                         
                         Button menuButton = menuInstance.GetComponent<Button>();
@@ -659,7 +659,7 @@ public class MasakuUI : MonoBehaviour
                         
                         if (menuButton != null)
                         {
-                            int seatIndex = i; // Capture seat index for this menu
+                            int seatIndex = i; 
                             menuButton.onClick.AddListener(() => OnSeatSelected(seatIndex));
                             
                             menuButton.interactable = true;
@@ -763,8 +763,8 @@ public class MasakuUI : MonoBehaviour
                         if (outline == null)
                         {
                             outline = menu.AddComponent<UnityEngine.UI.Outline>();
-                            outline.effectColor = Color.yellow; // Yellow outline for selection
-                            outline.effectDistance = new Vector2(5, -5); // Offset for outline visibility
+                            outline.effectColor = Color.yellow; 
+                            outline.effectDistance = new Vector2(5, -5); 
                         }
                         outline.enabled = true;
                     }
@@ -824,7 +824,7 @@ public class MasakuUI : MonoBehaviour
                     cardButton.interactable = interactable;
                     
                     ColorBlock colors = cardButton.colors;
-                    colors.disabledColor = Color.white; // Same as normal color
+                    colors.disabledColor = Color.white; 
                     cardButton.colors = colors;
                 }
             }
@@ -845,7 +845,7 @@ public class MasakuUI : MonoBehaviour
                     menuButton.interactable = interactable;
                     
                     ColorBlock colors = menuButton.colors;
-                    colors.disabledColor = Color.white; // Same as normal color
+                    colors.disabledColor = Color.white; 
                     menuButton.colors = colors;
                 }
             }
@@ -910,7 +910,7 @@ public class MasakuUI : MonoBehaviour
             if (card.isBoonCard)
             {
                 MasakuCardManager.Instance.PlayCard(card);
-                yield return new WaitForSeconds(0.3f); // Small delay between boons
+                yield return new WaitForSeconds(0.3f); 
             }
         }
         
@@ -976,7 +976,7 @@ public class MasakuUI : MonoBehaviour
     void PauseGame()
     {
         isPaused = true;
-        Time.timeScale = 0f; // Pause the game
+        Time.timeScale = 0f; 
         
         if (pausePanel != null)
             pausePanel.SetActive(true);
@@ -986,7 +986,7 @@ public class MasakuUI : MonoBehaviour
     void ResumeGame()
     {
         isPaused = false;
-        Time.timeScale = 1f; // Resume the game
+        Time.timeScale = 1f; 
         
         if (pausePanel != null)
             pausePanel.SetActive(false);

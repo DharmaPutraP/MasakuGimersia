@@ -10,26 +10,26 @@ public class CustomerInstance : MonoBehaviour
     public int seatIndex; // Kursi mana (0-3)
     
     [Header("UI References")]
-    public SpriteRenderer customerSprite; // Keep for backward compatibility
-    public Animator customerAnimator; // NEW: Animator for customer animations
-    public Canvas patienceCanvas; // Canvas containing patience UI (heart image + text)
-    public Transform patienceBarTransform; // The foreground bar that scales
-    public Transform patienceBarBackground; // Optional: Background bar
-    public SpriteRenderer patienceBarSprite; // To change color based on patience
-    public TextMeshProUGUI orderDisplayText; // NEW: Text to show order
-    public TextMeshProUGUI patienceText; // NEW: Text to show patience like "20/20"
+    public SpriteRenderer customerSprite; 
+    public Animator customerAnimator; 
+    public Canvas patienceCanvas; 
+    public Transform patienceBarTransform;  
+    public Transform patienceBarBackground; 
+    public SpriteRenderer patienceBarSprite;  
+    public TextMeshProUGUI orderDisplayText; 
+    public TextMeshProUGUI patienceText; 
     
     [Header("Patience Bar Settings")]
-    public int patienceSegments = 10; // Number of dividers/segments
-    public GameObject dividerPrefab; // Prefab for divider lines
-    public Transform dividersParent; // Parent object to hold all dividers
+    public int patienceSegments = 10; 
+    public GameObject dividerPrefab; 
+    public Transform dividersParent; 
     private List<GameObject> dividers = new List<GameObject>();
     private Camera mainCamera;
 
     [Header("Sound Effects")]
-    public AudioSource audioSource; // AudioSource for customer sounds
-    public AudioClip barbarianAngrySound; // Sound when Barbarian gets angry
-    public AudioClip wizardHappySound; // Sound when Wizard is satisfied (magical sound)
+    public AudioSource audioSource; 
+    public AudioClip barbarianAngrySound; 
+    public AudioClip wizardHappySound; 
     
     private bool isServed = false;
     
@@ -90,8 +90,8 @@ public class CustomerInstance : MonoBehaviour
                 
                 SpriteRenderer sr = divider.AddComponent<SpriteRenderer>();
                 sr.sprite = CreateLineSprite();
-                sr.color = new Color(0.3f, 0.3f, 0.3f, 0.8f); // Dark semi-transparent
-                sr.sortingOrder = bgSprite.sortingOrder + 2; // Above background and bar
+                sr.color = new Color(0.3f, 0.3f, 0.3f, 0.8f); 
+                sr.sortingOrder = bgSprite.sortingOrder + 2; 
             }
             
             float xPosition = -barWidth / 2 + (segmentWidth * i);
@@ -273,7 +273,7 @@ public class CustomerInstance : MonoBehaviour
             CustomerEntranceManager.Instance.StartCoroutine(
                 OpenDoorAndPlaySound(CustomerEntranceManager.Instance.doorOpenRotation)
             );
-            yield return new WaitForSeconds(0.5f); // Wait for door to start opening
+            yield return new WaitForSeconds(0.5f); 
         }
         
         Transform spawnPoint = CustomerEntranceManager.Instance.entranceSpawnPoint;

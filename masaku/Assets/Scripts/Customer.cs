@@ -16,22 +16,22 @@ public class Customer : ScriptableObject
 {
     public string customerName;
     public CustomerType customerType;
-    public Sprite customerSprite; // Keep for backward compatibility
-    public GameObject customerPrefab; // NEW: The actual customer 3D/2D object with animations
+    public Sprite customerSprite; 
+    public GameObject customerPrefab; 
     
     [Header("Patience Settings")]
     public int maxPatience;
     public int patienceDecayPerTurn;
     
     [Header("Order Requirements")]
-    public List<CardType> requiredCards; // Kombo kartu yang dibutuhkan
+    public List<CardType> requiredCards; 
     
     [Header("Rewards")]
-    public int focusReward; // Fokus yang didapat saat pesanan selesai
+    public int focusReward;
     
     [Header("Special Traits")]
-    public bool isBarbarian; // Memberikan curse jika marah
-    public bool isWizard; // Memberikan boon jika dilayani cepat
+    public bool isBarbarian;
+    public bool isWizard; 
     
     [TextArea(3, 5)]
     public string orderDescription;

@@ -8,10 +8,10 @@ public class ScreenFade : MonoBehaviour
     public static ScreenFade Instance;
 
     [Header("Fade Settings")]
-    public Image fadeImage; // Black overlay image
+    public Image fadeImage; 
     
-    public TextMeshProUGUI fadeText; // Text to display during fade
-    public float fadeDuration = 1f; // How long fade takes
+    public TextMeshProUGUI fadeText; 
+    public float fadeDuration = 1f; 
     
     private void Awake()
     {
@@ -29,8 +29,8 @@ public class ScreenFade : MonoBehaviour
             Color c = fadeImage.color;
             c.a = 0f;
             fadeImage.color = c;
-            fadeImage.gameObject.SetActive(false); // Start disabled
-            fadeText.gameObject.SetActive(false); // Start disabled
+            fadeImage.gameObject.SetActive(false); 
+            fadeText.gameObject.SetActive(false); 
         }
     }
     
@@ -88,7 +88,7 @@ public class ScreenFade : MonoBehaviour
     public IEnumerator FadeOutAndIn()
     {
         yield return FadeOut();
-        yield return new WaitForSeconds(0.5f); // Stay black for a moment
+        yield return new WaitForSeconds(0.5f); 
         yield return FadeIn();
     }
 }

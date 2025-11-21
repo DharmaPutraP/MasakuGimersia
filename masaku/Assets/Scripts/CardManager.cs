@@ -8,13 +8,13 @@ public class CardManager : MonoBehaviour
     public static CardManager Instance;
     
     [Header("Card Setup")]
-    public List<ActionCard> allActionCards; // Assign di Inspector
+    public List<ActionCard> allActionCards;
     
     [Header("Player Reference")]
     public PlayerMovement playerMovement;
     
     [Header("Game State")]
-    public int currentFocus = 3; // Fokus awal player
+    public int currentFocus = 3; 
     public int maxFocus = 5;
     
     private List<ActionCard> deck = new List<ActionCard>();
@@ -46,7 +46,7 @@ public class CardManager : MonoBehaviour
         foreach (ActionCard card in allActionCards)
         {
             deck.Add(card);
-            deck.Add(card); // Tambah duplikat untuk 2x
+            deck.Add(card);
         }
         
         ShuffleDeck();
