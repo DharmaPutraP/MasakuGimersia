@@ -24,7 +24,6 @@ public class ScreenFade : MonoBehaviour
             Destroy(gameObject);
         }
         
-        // Make sure fade image starts transparent and disabled
         if (fadeImage != null)
         {
             Color c = fadeImage.color;
@@ -37,10 +36,8 @@ public class ScreenFade : MonoBehaviour
     
     public IEnumerator FadeOut()
     {
-        // Fade to black
         if (fadeImage == null) yield break;
         
-        // Enable the image to block all clicks
         fadeImage.gameObject.SetActive(true);
         
         float elapsedTime = 0f;
@@ -57,7 +54,6 @@ public class ScreenFade : MonoBehaviour
         c.a = 1f;
         fadeImage.color = c;
         
-        // Enable the text during fade out
         if (fadeText != null)
         {
             fadeText.gameObject.SetActive(true);
@@ -66,7 +62,6 @@ public class ScreenFade : MonoBehaviour
     
     public IEnumerator FadeIn()
     {
-        // Fade from black to clear
         if (fadeImage == null) yield break;
         
         float elapsedTime = 0f;
@@ -83,9 +78,7 @@ public class ScreenFade : MonoBehaviour
         c.a = 0f;
         fadeImage.color = c;
 
-        // Disable the image to allow clicks again
         fadeImage.gameObject.SetActive(false);
-        // Disable the text after fade in
         if (fadeText != null)
         {
             fadeText.gameObject.SetActive(false);
@@ -94,7 +87,6 @@ public class ScreenFade : MonoBehaviour
     
     public IEnumerator FadeOutAndIn()
     {
-        // Fade to black, then back to normal
         yield return FadeOut();
         yield return new WaitForSeconds(0.5f); // Stay black for a moment
         yield return FadeIn();

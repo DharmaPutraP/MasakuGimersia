@@ -30,15 +30,12 @@ public class ActionCard : ScriptableObject
     [TextArea(3, 5)]
     public string description;
     
-    // Untuk kartu khusus seperti "Tarik Nafas"
     public bool isSpecialCard;
     public int discardCount;
     public int drawCount;
     public int focusGrant; // Focus yang diberikan saat dimainkan (untuk Wizard Boon Focus)
     
-    // For curse cards that cannot be played
     public bool isCurseCard;
     
-    // For boon cards (one-time use, disappear after use or at end of day)
     public bool isBoonCard;
 }

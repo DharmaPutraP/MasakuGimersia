@@ -39,12 +39,10 @@ public class CardManager : MonoBehaviour
         DrawCards(startingHandSize);
     }
     
-    // Inisialisasi deck dengan 10 kartu tetap
     void InitializeDeck()
     {
         deck.Clear();
         
-        // Tambahkan kartu sesuai spesifikasi (2x masing-masing)
         foreach (ActionCard card in allActionCards)
         {
             deck.Add(card);
@@ -71,7 +69,6 @@ public class CardManager : MonoBehaviour
         {
             if (hand.Count >= maxHandSize)
             {
-                Debug.Log("Tangan sudah penuh!");
                 break;
             }
             
@@ -85,7 +82,6 @@ public class CardManager : MonoBehaviour
                 ActionCard drawnCard = deck[0];
                 deck.RemoveAt(0);
                 hand.Add(drawnCard);
-                Debug.Log($"Tarik kartu: {drawnCard.cardName}");
             }
         }
     }
@@ -94,96 +90,76 @@ public class CardManager : MonoBehaviour
     {
         if (discardPile.Count > 0)
         {
-            Debug.Log("Mengocok ulang discard pile ke deck");
             deck.AddRange(discardPile);
             discardPile.Clear();
             ShuffleDeck();
         }
     }
     
-    // Method utama untuk memainkan kartu
     public void PlayCard(ActionCard card)
     {
         if (!hand.Contains(card))
         {
-            Debug.LogWarning("Kartu tidak ada di tangan!");
             return;
         }
         
-        // Cek apakah kartu spesial (Tarik Nafas)
         if (card.isSpecialCard)
         {
             ExecuteSpecialCard(card);
         }
         else
         {
-            // Cek fokus untuk kartu biasa
             if (currentFocus < card.focusCost)
             {
-                Debug.LogWarning("Fokus tidak cukup!");
                 return;
             }
             
-            // Kurangi fokus
             currentFocus -= card.focusCost;
             
-            // Jalankan aksi kartu
             ExecuteCardAction(card);
         }
         
-        // Pindahkan kartu ke discard pile
         hand.Remove(card);
         discardPile.Add(card);
-        
-        Debug.Log($"Memainkan kartu: {card.cardName}");
     }
     
     void ExecuteCardAction(ActionCard card)
     {
-        // Cari lokasi berdasarkan tag
         GameObject targetLocation = GameObject.FindGameObjectWithTag(card.targetTag);
         
         if (targetLocation != null)
         {
-            // Gerakkan player ke lokasi
             if (playerMovement != null)
             {
                 playerMovement.MoveToLocation(targetLocation.transform.position, card);
             }
             else
             {
-                Debug.LogError("PlayerMovement tidak ditemukan!");
             }
         }
         else
         {
-            Debug.LogError($"Lokasi dengan tag '{card.targetTag}' tidak ditemukan!");
         }
     }
     
     void ExecuteSpecialCard(ActionCard card)
     {
-        // Tarik Nafas: Buang 1 kartu, tarik 1 kartu
         if (card.discardCount > 0 && hand.Count > 1)
         {
-            // Buang kartu pertama dari tangan (selain kartu Tarik Nafas yang dimainkan)
             ActionCard cardToDiscard = hand.FirstOrDefault(c => c != card);
             if (cardToDiscard != null)
             {
                 hand.Remove(cardToDiscard);
                 discardPile.Add(cardToDiscard);
-                Debug.Log($"Membuang kartu: {cardToDiscard.cardName}");
             }
         }
         
-        // Tarik kartu baru
         if (card.drawCount > 0)
         {
             DrawCards(card.drawCount);
         }
     }
     
-    // Method untuk UI atau input player
     public void PlayCardByIndex(int handIndex)
     {
         if (handIndex >= 0 && handIndex < hand.Count)

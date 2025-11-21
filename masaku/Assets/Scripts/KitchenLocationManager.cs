@@ -34,8 +34,6 @@ public class KitchenLocationManager : MonoBehaviour
                 return location.locationTransform;
             }
         }
-        
-        Debug.LogWarning($"Lokasi dengan tag '{tag}' tidak ditemukan!");
         return null;
     }
     
@@ -50,13 +48,11 @@ public class KitchenLocationManager : MonoBehaviour
         return Vector3.zero;
     }
     
-    // Auto-find locations by tag in the scene
     [ContextMenu("Auto-Find Locations")]
     public void AutoFindLocations()
     {
         locations.Clear();
         
-        // Find all GameObjects with specific tags
         string[] kitchenTags = { "CuttingBoard", "Stove", "ServingCounter", "StorageVegetable", "StorageMeat" };
         
         foreach (string tag in kitchenTags)
@@ -73,7 +69,5 @@ public class KitchenLocationManager : MonoBehaviour
                 locations.Add(newLocation);
             }
         }
-        
-        Debug.Log($"Found {locations.Count} kitchen locations");
     }
 }

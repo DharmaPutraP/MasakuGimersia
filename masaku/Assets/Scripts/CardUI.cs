@@ -23,7 +23,6 @@ public class CardUI : MonoBehaviour
     
     void Update()
     {
-        // Update UI setiap frame untuk perubahan real-time
         if (Input.GetKeyDown(KeyCode.Space))
         {
             UpdateHandUI();
@@ -33,14 +32,12 @@ public class CardUI : MonoBehaviour
     
     public void UpdateHandUI()
     {
-        // Hapus UI kartu lama
         foreach (GameObject cardUI in cardUIObjects)
         {
             Destroy(cardUI);
         }
         cardUIObjects.Clear();
         
-        // Buat UI untuk kartu di tangan
         List<ActionCard> hand = CardManager.Instance.GetHand();
         for (int i = 0; i < hand.Count; i++)
         {
@@ -55,7 +52,6 @@ public class CardUI : MonoBehaviour
         GameObject cardUI = Instantiate(cardUIPrefab, handContainer);
         cardUIObjects.Add(cardUI);
         
-        // Setup card UI components
         TextMeshProUGUI nameText = cardUI.transform.Find("CardName")?.GetComponent<TextMeshProUGUI>();
         TextMeshProUGUI costText = cardUI.transform.Find("FocusCost")?.GetComponent<TextMeshProUGUI>();
         Image cardImage = cardUI.transform.Find("CardImage")?.GetComponent<Image>();
@@ -65,7 +61,6 @@ public class CardUI : MonoBehaviour
         if (costText != null) costText.text = card.isSpecialCard ? "Special" : $"Fokus: {card.focusCost}";
         if (cardImage != null && card.cardImage != null) cardImage.sprite = card.cardImage;
         
-        // Tambahkan listener untuk click
         if (cardButton != null)
         {
             int cardIndex = index;

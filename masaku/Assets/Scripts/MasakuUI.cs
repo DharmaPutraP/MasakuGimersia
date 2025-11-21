@@ -55,6 +55,23 @@ public class MasakuUI : MonoBehaviour
     public AudioClip cardSelectSound; // Sound when selecting a card
     public AudioClip tarikNafasSound; // Sound when using Tarik Nafas cards
     
+    [Header("Hint System")]
+    public TextMeshProUGUI hintText; // Text component for displaying hints
+    public CanvasGroup hintCanvasGroup; // For fade in/out animation
+    public float hintFadeDuration = 0.3f; // Duration of fade animation
+    public float hintDisplayDuration = 2f; // How long hint stays visible
+    private Coroutine currentHintCoroutine;
+    
+    [Header("Pause Menu")]
+    public GameObject pausePanel; // Pause menu panel
+    public Button pauseContinueButton; // Continue button
+    public Button pauseExitButton; // Exit to main menu button
+    private bool isPaused = false;
+    
+    [Header("Shuffle Animation")]
+    public float shuffleAnimationDuration = 1.0f; // Duration of shuffle animation
+    private bool isShuffling = false;
+    
     private List<GameObject> activeMenus = new List<GameObject>(); // Track created menus
     private Dictionary<GameObject, int> menuToSeatIndex = new Dictionary<GameObject, int>(); // Map menu to seat index
     
@@ -73,14 +90,21 @@ public class MasakuUI : MonoBehaviour
     
     void Start()
     {
-        // Setup button listeners
         if (submitOrderButton != null)
             submitOrderButton.onClick.AddListener(OnSubmitOrderClicked);
         
         if (endTurnButton != null)
             endTurnButton.onClick.AddListener(OnEndTurnClicked);
         
-        // Add null check for seatButtons array
+        if (pauseContinueButton != null)
+            pauseContinueButton.onClick.AddListener(OnPauseContinueClicked);
+        
+        if (pauseExitButton != null)
+            pauseExitButton.onClick.AddListener(OnPauseExitClicked);
+        
+        if (pausePanel != null)
+            pausePanel.SetActive(false);
+        
         if (seatButtons != null && seatButtons.Length > 0)
         {
             for (int i = 0; i < seatButtons.Length; i++)
@@ -95,13 +119,20 @@ public class MasakuUI : MonoBehaviour
         
         UpdateUI();
         UpdateCustomerMenus(); // Initialize customer menus visibility
+        
+        if (hintCanvasGroup != null)
+        {
+            hintCanvasGroup.alpha = 0f;
+        }
     }
     
     void Update()
     {
-        // Only update displays that change frequently
-        // DON'T call UpdateHandDisplay() every frame - it destroys and recreates cards!
-        // DON'T call UpdateCustomerMenus() every frame - it destroys and recreates menus!
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            TogglePause();
+        }
+        
         UpdateFocusDisplay();
         UpdateReputationDisplay();
         UpdateDayDisplay();
@@ -125,16 +156,10 @@ public class MasakuUI : MonoBehaviour
             focusText.text = $"{GameManager.Instance.currentFocus}";
         }
         
-        // if (focusBar != null)
-        // {
-        //     float focusPercent = GameManager.Instance.currentFocus / 10f; // Max assumed 10
-        //     focusBar.fillAmount = focusPercent;
-        // }
     }
     
     void UpdateReputationDisplay()
     {
-        // Update star visuals
         if (reputationStars != null && reputationStars.Length > 0)
         {
             int currentReputation = GameManager.Instance.reputation;
@@ -143,7 +168,6 @@ public class MasakuUI : MonoBehaviour
             {
                 if (reputationStars[i] != null)
                 {
-                    // Show star ON if within current reputation, otherwise show star OFF
                     if (i < currentReputation)
                     {
                         reputationStars[i].sprite = starOnSprite;
@@ -156,8 +180,6 @@ public class MasakuUI : MonoBehaviour
                     }
                 }
             }
-            
-            Debug.Log($"Updated reputation display: {currentReputation}/5 stars");
         }
         else
         {
@@ -173,11 +195,161 @@ public class MasakuUI : MonoBehaviour
         }
     }
     
+    public void PlayShuffleAnimation()
+    {
+        if (!isShuffling)
+        {
+            StartCoroutine(ShuffleCardsAnimation());
+        }
+    }
+    
+    IEnumerator ShuffleCardsAnimation()
+    {
+        isShuffling = true;
+        
+        List<CardAnimData> cardData = new List<CardAnimData>();
+        
+        foreach (GameObject cardUI in cardUIObjects)
+        {
+            if (cardUI != null)
+            {
+                RectTransform rect = cardUI.GetComponent<RectTransform>();
+                cardData.Add(new CardAnimData
+                {
+                    rectTransform = rect,
+                    originalPosition = rect.anchoredPosition,
+                    originalRotation = rect.localRotation,
+                    originalScale = rect.localScale
+                });
+            }
+        }
+        
+        if (cardData.Count == 0)
+        {
+            isShuffling = false;
+            yield break;
+        }
+        
+        float elapsedTime = 0f;
+        float shuffleDuration = shuffleAnimationDuration;
+        
+        while (elapsedTime < shuffleDuration * 0.3f)
+        {
+            elapsedTime += Time.deltaTime;
+            float progress = elapsedTime / (shuffleDuration * 0.3f);
+            float easeProgress = EaseInOut(progress);
+            
+            foreach (var data in cardData)
+            {
+                if (data.rectTransform != null)
+                {
+                    data.rectTransform.anchoredPosition = Vector3.Lerp(data.originalPosition, Vector3.zero, easeProgress);
+                    float rotation = Mathf.Lerp(0, 720f, easeProgress);
+                    data.rectTransform.localRotation = Quaternion.Euler(0, 0, rotation);
+                    data.rectTransform.localScale = Vector3.Lerp(data.originalScale, data.originalScale * 0.5f, easeProgress);
+                }
+            }
+            
+            yield return null;
+        }
+        
+        float spinStart = elapsedTime;
+        while (elapsedTime < shuffleDuration * 0.6f)
+        {
+            elapsedTime += Time.deltaTime;
+            float spinTime = elapsedTime - spinStart;
+            
+            foreach (var data in cardData)
+            {
+                if (data.rectTransform != null)
+                {
+                    float rotation = (spinTime * 720f) % 360f;
+                    float wobbleX = Mathf.Sin(spinTime * 20f) * 30f;
+                    float wobbleY = Mathf.Cos(spinTime * 20f) * 30f;
+                    data.rectTransform.anchoredPosition = new Vector3(wobbleX, wobbleY, 0);
+                    data.rectTransform.localRotation = Quaternion.Euler(0, 0, rotation);
+                }
+            }
+            
+            yield return null;
+        }
+        
+        float expandStart = elapsedTime;
+        while (elapsedTime < shuffleDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float progress = (elapsedTime - expandStart) / (shuffleDuration * 0.4f);
+            float easeProgress = EaseInOut(progress);
+            
+            foreach (var data in cardData)
+            {
+                if (data.rectTransform != null)
+                {
+                    data.rectTransform.anchoredPosition = Vector3.Lerp(data.rectTransform.anchoredPosition, data.originalPosition, easeProgress);
+                    data.rectTransform.localRotation = Quaternion.Lerp(data.rectTransform.localRotation, data.originalRotation, easeProgress);
+                    data.rectTransform.localScale = Vector3.Lerp(data.rectTransform.localScale, data.originalScale, easeProgress);
+                }
+            }
+            
+            yield return null;
+        }
+        
+        foreach (var data in cardData)
+        {
+            if (data.rectTransform != null)
+            {
+                data.rectTransform.anchoredPosition = data.originalPosition;
+                data.rectTransform.localRotation = data.originalRotation;
+                data.rectTransform.localScale = data.originalScale;
+            }
+        }
+        
+        isShuffling = false;
+    }
+    
+    private class CardAnimData
+    {
+        public RectTransform rectTransform;
+        public Vector3 originalPosition;
+        public Quaternion originalRotation;
+        public Vector3 originalScale;
+    }
+    
+    private float EaseInOut(float t)
+    {
+        return t < 0.5f ? 2f * t * t : 1f - Mathf.Pow(-2f * t + 2f, 2f) / 2f;
+    }
+    
     public void UpdateHandDisplay()
     {
-        Debug.Log("=== UpdateHandDisplay called ===");
+        if (isShuffling)
+        {
+            return;
+        }
         
-        // Debug check
+        if (MasakuCardManager.Instance != null && MasakuCardManager.Instance.ShouldPlayShuffleAnimation())
+        {
+            StartCoroutine(UpdateHandWithShuffleAnimation());
+            return;
+        }
+        
+        UpdateHandDisplayImmediate();
+    }
+    
+    IEnumerator UpdateHandWithShuffleAnimation()
+    {
+        
+        if (cardUIObjects.Count > 0 && !isShuffling)
+        {
+            yield return StartCoroutine(ShuffleCardsAnimation());
+        }
+        
+        UpdateHandDisplayImmediate();
+    }
+    
+    void UpdateHandDisplayImmediate()
+    {
+        
         if (handContainer == null)
         {
             Debug.LogError("HandContainer is NULL! Assign it in MasakuUI Inspector.");
@@ -190,24 +362,19 @@ public class MasakuUI : MonoBehaviour
             return;
         }
         
-        // Hapus UI kartu lama
-        Debug.Log($"Destroying {cardUIObjects.Count} old card UI objects");
         foreach (GameObject cardUI in cardUIObjects)
         {
             Destroy(cardUI);
         }
         cardUIObjects.Clear();
         
-        // Buat UI untuk kartu di tangan
         List<ActionCard> hand = MasakuCardManager.Instance.GetHand();
-        Debug.Log($"UpdateHandDisplay: Creating UI for {hand.Count} cards in hand");
         
         for (int i = 0; i < hand.Count; i++)
         {
             CreateCardUI(hand[i], i);
         }
         
-        Debug.Log($"Total card UI objects created: {cardUIObjects.Count}");
     }
     
     void CreateCardUI(ActionCard card, int index)
@@ -217,102 +384,77 @@ public class MasakuUI : MonoBehaviour
         GameObject cardUI = Instantiate(cardUIPrefab, handContainer);
         cardUIObjects.Add(cardUI);
         
-        Debug.Log($"Created CardUI for: {card.cardName}, GameObject: {cardUI.name}, Active: {cardUI.activeInHierarchy}");
-        
-        // === FAN LAYOUT CALCULATION ===
         int handSize = MasakuCardManager.Instance.GetHand().Count;
         
-        // Calculate angle for this card
         float angleStep = handSize > 1 ? fanSpread / (handSize - 1) : 0;
         float cardAngle = (index * angleStep) - (fanSpread / 2f); // -15 to +15 for 5 cards with 30° spread
         
-        // Calculate position on arc
         float angleRad = cardAngle * Mathf.Deg2Rad;
         float x = Mathf.Sin(angleRad) * fanRadius;
         float y = -Mathf.Cos(angleRad) * fanRadius;
         
-        // Add vertical offset (cards in center are higher)
         float normalizedPosition = Mathf.Abs((index - (handSize - 1) / 2f) / (handSize / 2f)); // 0 at center, 1 at edges
         float verticalLift = cardVerticalOffset * (1f - normalizedPosition);
         y += verticalLift;
         
-        // Apply position
         RectTransform rectTransform = cardUI.GetComponent<RectTransform>();
         if (rectTransform != null)
         {
             rectTransform.anchoredPosition = fanCenterPosition + new Vector3(x, y, 0);
             rectTransform.localRotation = Quaternion.Euler(0, 0, -cardAngle); // Rotate card to follow fan
             
-            // Set card to be in front based on index (right cards on top)
             rectTransform.SetAsLastSibling();
         }
-        // === END FAN LAYOUT ===
         
-        // Get Button component (Button has an Image component built-in)
         Button cardButton = cardUI.GetComponent<Button>();
         
         if (cardButton != null)
         {
-            // Debug.Log($"Button found! Interactable: {cardButton.interactable}");
             
-            // Curse cards should not be interactable
             if (card.isCurseCard)
             {
                 cardButton.interactable = false;
                 
-                // Keep curse button color unchanged when disabled
                 ColorBlock colors = cardButton.colors;
                 colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 1f); // Gray but visible
                 cardButton.colors = colors;
             }
             else
             {
-                // Make sure button is interactable for non-curse cards
                 cardButton.interactable = true;
             }
             
-            // Get the Image component from the Button
             Image cardImage = cardButton.GetComponent<Image>();
             
             if (cardImage != null && card.cardImage != null)
             {
-                // Set the card's designed image
                 cardImage.sprite = card.cardImage;
                 
-                // Make sure raycast target is enabled
                 cardImage.raycastTarget = true;
-                // Debug.Log($"Set card image for: {card.cardName}, Raycast Target: {cardImage.raycastTarget}");
                 
-                // Visual feedback for Tarik Nafas mode
                 if (isTarikNafasMode && index == tarikNafasCardIndex)
                 {
-                    // Highlight the Tarik Nafas card being played
                     cardUI.transform.localScale = Vector3.one * 1.3f;
                     cardImage.color = new Color(0.5f, 1f, 0.5f); // Greenish tint
                 }
-                // Visual feedback for curse cards (cannot be played)
                 else if (card.isCurseCard)
                 {
                     cardUI.transform.localScale = Vector3.one * 0.9f; // Slightly smaller
                     cardImage.color = new Color(0.5f, 0.5f, 0.5f, 1f); // Grayed out but opaque
                 }
-                // Check if selected (for both boon and normal cards)
                 else if (MasakuCardManager.Instance.IsCardSelected(index))
                 {
                     if (card.isBoonCard)
                     {
-                        // Selected boon card: even larger and brighter
                         cardUI.transform.localScale = Vector3.one * 1.3f;
                         cardImage.color = new Color(1f, 1f, 0.5f, 1f); // Bright yellow
                     }
                     else
                     {
-                        // Selected normal card
                         cardUI.transform.localScale = Vector3.one * 1.2f; // Scale up by 20%
                         cardImage.color = Color.white; // Keep normal color
                     }
                 }
-                // Visual feedback for unselected boon cards (glowing effect)
                 else if (card.isBoonCard)
                 {
                     cardUI.transform.localScale = Vector3.one * 1.15f; // Slightly larger
@@ -330,10 +472,8 @@ public class MasakuUI : MonoBehaviour
                 if (card.cardImage == null) Debug.LogError($"Card '{card.cardName}' missing cardImage sprite!");
             }
             
-            // Add click listener
             int cardIndex = index;
             cardButton.onClick.AddListener(() => OnCardClicked(cardIndex));
-            // Debug.Log($"Click listener added for card index: {cardIndex}");
         }
         else
         {
@@ -343,14 +483,11 @@ public class MasakuUI : MonoBehaviour
     
     void OnCardClicked(int handIndex)
     {
-        // Prevent interaction during execution
         if (isExecutingOrder)
         {
-            Debug.Log("Cannot select cards during order execution!");
             return;
         }
         
-        Debug.Log($"===== CARD CLICKED! Index: {handIndex} =====");
         
         List<ActionCard> hand = MasakuCardManager.Instance.GetHand();
         if (handIndex < 0 || handIndex >= hand.Count)
@@ -360,98 +497,83 @@ public class MasakuUI : MonoBehaviour
         }
         
         ActionCard card = hand[handIndex];
-        Debug.Log($"Card clicked: {card.cardName}");
         
-        // Prevent clicking curse cards
         if (card.isCurseCard)
         {
-            Debug.Log("Cannot play or select curse cards!");
+            ShowHint("Curse cards cannot be selected!");
             return;
         }
         
-        // Check if it's a special card (like Tarik Nafas) - NOT boon cards
         if (card.isSpecialCard && !card.isBoonCard)
         {
-            // If already in Tarik Nafas mode, cancel it
             if (isTarikNafasMode && handIndex == tarikNafasCardIndex)
             {
-                Debug.Log("Cancelling Tarik Nafas mode");
                 isTarikNafasMode = false;
                 tarikNafasCardIndex = -1;
                 UpdateHandDisplay();
                 return;
             }
             
-            Debug.Log($"Tarik Nafas card clicked! Now select a card to discard.");
+            ShowHint("Select a card to discard");
             
-            // Play Tarik Nafas sound
             PlaySound(tarikNafasSound);
             
-            // Enter Tarik Nafas mode - player must select a card to discard
             isTarikNafasMode = true;
             tarikNafasCardIndex = handIndex;
             
-            // Visual feedback - scale up the Tarik Nafas card
             UpdateHandDisplay();
             return;
         }
         
-        // If in Tarik Nafas mode, this card will be discarded
         if (isTarikNafasMode)
         {
-            // Cannot discard curse cards
             if (card.isCurseCard)
             {
-                Debug.Log("Cannot discard curse cards!");
+                ShowHint("Cannot discard curse cards!");
                 return;
             }
             
-            // Cannot discard boon cards
             if (card.isBoonCard)
             {
-                Debug.Log("Cannot discard boon cards!");
+                ShowHint("Cannot discard boon cards!");
                 return;
             }
             
-            Debug.Log($"Discarding {card.cardName} and playing Tarik Nafas");
-            
-            // Play card select sound (discarding)
             PlaySound(cardSelectSound);
             
-            // Play the Tarik Nafas card with the selected card to discard
             bool success = MasakuCardManager.Instance.PlayTarikNafas(tarikNafasCardIndex, handIndex);
             
             if (success)
             {
-                // Exit Tarik Nafas mode
                 isTarikNafasMode = false;
                 tarikNafasCardIndex = -1;
                 
-                // Update hand display
                 UpdateHandDisplay();
             }
             return;
         }
         
-        // Toggle selection by index for normal cards AND boon cards
         if (MasakuCardManager.Instance.IsCardSelected(handIndex))
         {
-            Debug.Log($"Deselecting card at index: {handIndex}");
             MasakuCardManager.Instance.DeselectCard(handIndex);
             
-            // Play card select sound
             PlaySound(cardSelectSound);
         }
         else
         {
-            Debug.Log($"Selecting card at index: {handIndex}");
             MasakuCardManager.Instance.SelectCard(handIndex);
             
-            // Play card select sound
+            int selectedCount = MasakuCardManager.Instance.GetSelectedCards().Count;
+            int totalFocus = 0;
+            foreach (ActionCard c in MasakuCardManager.Instance.GetSelectedCards())
+            {
+                totalFocus += c.focusCost;
+            }
+            ShowHint($"✓ {selectedCount} card(s) selected | Focus cost: {totalFocus}/{GameManager.Instance.currentFocus}");
+            
             PlaySound(cardSelectSound);
         }
         
-        // Update UI to show selection
         UpdateHandDisplay();
     }
     
@@ -459,7 +581,6 @@ public class MasakuUI : MonoBehaviour
     {
         if (preparationText != null)
         {
-            // Show selected cards (before execution)
             List<ActionCard> selectedCards = MasakuCardManager.Instance.GetSelectedCards();
             
             string prepText = "Kartu Dipilih: ";
@@ -475,7 +596,6 @@ public class MasakuUI : MonoBehaviour
                 }
             }
             
-            // Show preparation station (after execution)
             if (GameManager.Instance.preparationStation.Count > 0)
             {
                 prepText += "\nDi Stasiun: ";
@@ -497,20 +617,14 @@ public class MasakuUI : MonoBehaviour
             return;
         }
         
-        // Get active customers from GameManager
         CustomerInstance[] activeCustomers = GameManager.Instance.GetActiveCustomers();
         
-        Debug.Log($"=== Updating Customer Menus: {activeCustomers.Length} seats ===");
-        
-        // Only clear card selection if NOT currently executing an order
-        // (prevents clearing selection mid-execution when new customer arrives)
         if (!isExecutingOrder)
         {
             MasakuCardManager.Instance.ClearSelection();
             selectedSeat = -1;
         }
         
-        // Destroy all existing menus
         foreach (GameObject menu in activeMenus)
         {
             if (menu != null)
@@ -519,7 +633,6 @@ public class MasakuUI : MonoBehaviour
         activeMenus.Clear();
         menuToSeatIndex.Clear(); // Clear seat mapping
         
-        // Create menu for each active customer
         int menuCount = 0;
         for (int i = 0; i < activeCustomers.Length; i++)
         {
@@ -528,26 +641,19 @@ public class MasakuUI : MonoBehaviour
                 Customer customer = activeCustomers[i].GetCustomer();
                 if (customer != null)
                 {
-                    Debug.Log($"Seat {i}: {customer.customerName} (Type: {customer.customerType})");
                     
-                    // Get the appropriate menu prefab for this customer type
                     GameObject menuPrefab = GetMenuPrefabForCustomerType(customer.customerType);
                     
                     if (menuPrefab != null)
                     {
-                        // Instantiate menu
                         GameObject menuInstance = Instantiate(menuPrefab, customerMenuContainer);
                         activeMenus.Add(menuInstance);
                         menuToSeatIndex[menuInstance] = i; // Map this menu to its seat index
                         menuCount++;
                         
-                        Debug.Log($"Created menu for {customer.customerName} at seat {i}");
-                        
-                        // Add click listener to the menu
                         Button menuButton = menuInstance.GetComponent<Button>();
                         if (menuButton == null)
                         {
-                            // If menu doesn't have Button component on root, try to find it in children
                             menuButton = menuInstance.GetComponentInChildren<Button>();
                         }
                         
@@ -556,7 +662,6 @@ public class MasakuUI : MonoBehaviour
                             int seatIndex = i; // Capture seat index for this menu
                             menuButton.onClick.AddListener(() => OnSeatSelected(seatIndex));
                             
-                            // Make sure button is interactable and image has raycast target
                             menuButton.interactable = true;
                             Image menuImage = menuButton.GetComponent<Image>();
                             if (menuImage != null)
@@ -564,7 +669,6 @@ public class MasakuUI : MonoBehaviour
                                 menuImage.raycastTarget = true;
                             }
                             
-                            Debug.Log($"Added click listener to menu for seat {seatIndex}");
                         }
                         else
                         {
@@ -581,22 +685,16 @@ public class MasakuUI : MonoBehaviour
                     Debug.LogWarning($"Seat {i}: Customer instance exists but customerData is null!");
                 }
             }
-            else
-            {
-                Debug.Log($"Seat {i}: Empty");
-            }
         }
         
-        Debug.Log($"Total menus created: {menuCount}");
-        
-        // Restore selection scales after recreating menus
         UpdateMenuScales();
         
-        // Update button states based on whether there are customers
         UpdateButtonStates();
         
-        // Update hand display to reflect cleared selection
-        UpdateHandDisplay();
+        if (GameManager.Instance.isPlayerTurn)
+        {
+            UpdateHandDisplay();
+        }
     }
     
     GameObject GetMenuPrefabForCustomerType(CustomerType type)
@@ -629,32 +727,25 @@ public class MasakuUI : MonoBehaviour
     
     void OnSeatSelected(int seatIndex)
     {
-        // Prevent interaction during execution
         if (isExecutingOrder)
         {
-            Debug.Log("Cannot select seats during order execution!");
             return;
         }
         
-        // Toggle selection: if clicking the same seat, deselect it
         if (selectedSeat == seatIndex)
         {
             selectedSeat = -1;
-            Debug.Log($"Kursi {seatIndex} dibatalkan");
         }
         else
         {
             selectedSeat = seatIndex;
-            Debug.Log($"Kursi {seatIndex} dipilih");
         }
         
-        // Update menu scales based on selection
         UpdateMenuScales();
     }
     
     void UpdateMenuScales()
     {
-        // Scale menus based on current selection
         foreach (GameObject menu in activeMenus)
         {
             if (menu != null && menuToSeatIndex.ContainsKey(menu))
@@ -666,13 +757,26 @@ public class MasakuUI : MonoBehaviour
                     
                     if (menuSeat == selectedSeat && selectedSeat >= 0)
                     {
-                        // Scale up selected menu
                         menuRect.localScale = Vector3.one * 1.2f;
+                        
+                        UnityEngine.UI.Outline outline = menu.GetComponent<UnityEngine.UI.Outline>();
+                        if (outline == null)
+                        {
+                            outline = menu.AddComponent<UnityEngine.UI.Outline>();
+                            outline.effectColor = Color.yellow; // Yellow outline for selection
+                            outline.effectDistance = new Vector2(5, -5); // Offset for outline visibility
+                        }
+                        outline.enabled = true;
                     }
                     else
                     {
-                        // Normal scale for others (including deselected)
                         menuRect.localScale = Vector3.one;
+                        
+                        UnityEngine.UI.Outline outline = menu.GetComponent<UnityEngine.UI.Outline>();
+                        if (outline != null)
+                        {
+                            outline.enabled = false;
+                        }
                     }
                 }
             }
@@ -681,13 +785,10 @@ public class MasakuUI : MonoBehaviour
     
     void UpdateButtonStates()
     {
-        // Check if there are any active customers
         bool hasCustomers = activeMenus.Count > 0;
         
-        // Keep buttons disabled during execution, even if customers are present
         bool shouldEnable = hasCustomers && !isExecutingOrder;
         
-        // Disable submit and end turn buttons if no customers or if executing
         if (submitOrderButton != null)
         {
             submitOrderButton.interactable = shouldEnable;
@@ -697,16 +798,12 @@ public class MasakuUI : MonoBehaviour
         {
             endTurnButton.interactable = shouldEnable;
         }
-        
-        Debug.Log($"Buttons enabled: {shouldEnable} (Active menus: {activeMenus.Count}, Executing: {isExecutingOrder})");
     }
     
     void SetUIInteractable(bool interactable)
     {
-        // Don't enable buttons if there are no customers
         bool hasCustomers = activeMenus.Count > 0;
         
-        // Enable/disable submit and end turn buttons
         if (submitOrderButton != null)
         {
             submitOrderButton.interactable = interactable && hasCustomers;
@@ -717,7 +814,6 @@ public class MasakuUI : MonoBehaviour
             endTurnButton.interactable = interactable && hasCustomers;
         }
         
-        // Enable/disable all card buttons WITHOUT changing color
         foreach (GameObject cardObj in cardUIObjects)
         {
             if (cardObj != null)
@@ -727,7 +823,6 @@ public class MasakuUI : MonoBehaviour
                 {
                     cardButton.interactable = interactable;
                     
-                    // Keep button colors unchanged when disabled
                     ColorBlock colors = cardButton.colors;
                     colors.disabledColor = Color.white; // Same as normal color
                     cardButton.colors = colors;
@@ -735,7 +830,6 @@ public class MasakuUI : MonoBehaviour
             }
         }
         
-        // Enable/disable all menu buttons WITHOUT changing color
         foreach (GameObject menu in activeMenus)
         {
             if (menu != null)
@@ -750,7 +844,6 @@ public class MasakuUI : MonoBehaviour
                 {
                     menuButton.interactable = interactable;
                     
-                    // Keep button colors unchanged when disabled
                     ColorBlock colors = menuButton.colors;
                     colors.disabledColor = Color.white; // Same as normal color
                     menuButton.colors = colors;
@@ -758,56 +851,60 @@ public class MasakuUI : MonoBehaviour
             }
         }
         
-        Debug.Log($"UI Interactable set to: {interactable}");
     }
     
     void OnSubmitOrderClicked()
     {
-        // Play button click sound
         PlaySound(buttonClickSound);
         
-        // Check if cards are selected
         List<ActionCard> selectedCards = MasakuCardManager.Instance.GetSelectedCards();
         if (selectedCards.Count == 0)
         {
             Debug.LogWarning("Pilih kartu terlebih dahulu!");
+            ShowHint("Select cards first!");
             return;
         }
         
-        // Check if only boon cards are selected (no customer needed)
+        int totalFocusCost = 0;
+        foreach (ActionCard card in selectedCards)
+        {
+            totalFocusCost += card.focusCost;
+        }
+        
+        if (totalFocusCost > GameManager.Instance.currentFocus)
+        {
+            Debug.LogWarning($"Not enough focus! Need {totalFocusCost}, have {GameManager.Instance.currentFocus}");
+            ShowHint($"❌ Not enough focus! Need {totalFocusCost}, have {GameManager.Instance.currentFocus}");
+            return;
+        }
+        
         bool allBoonCards = selectedCards.All(c => c.isBoonCard);
         
         if (allBoonCards)
         {
-            Debug.Log("Playing boon cards only - no customer selection needed");
             StartCoroutine(ExecuteBoonCards());
         }
         else
         {
-            // Normal cards need customer selection
             if (selectedSeat < 0)
             {
                 Debug.LogWarning("Pilih kursi customer terlebih dahulu!");
+                ShowHint("Select a customer seat first!");
                 return;
             }
             
-            // Start executing selected cards
             StartCoroutine(ExecuteAndSubmitOrder());
         }
     }
     
     IEnumerator ExecuteBoonCards()
     {
-        // Set flag to prevent interactions
         isExecutingOrder = true;
         
-        // Disable all interactive buttons
         SetUIInteractable(false);
         
-        // Get selected boon cards
         List<ActionCard> selectedCards = MasakuCardManager.Instance.GetSelectedCards();
         
-        // Play each boon card
         foreach (ActionCard card in selectedCards)
         {
             if (card.isBoonCard)
@@ -817,60 +914,151 @@ public class MasakuUI : MonoBehaviour
             }
         }
         
-        // Update hand display
         UpdateHandDisplay();
         
-        // Re-enable interactions
         isExecutingOrder = false;
         SetUIInteractable(true);
     }
     
     IEnumerator ExecuteAndSubmitOrder()
     {
-        // Set flag to prevent interactions
         isExecutingOrder = true;
         
-        // Disable all interactive buttons
         SetUIInteractable(false);
         
-        // Execute all selected cards
         yield return StartCoroutine(MasakuCardManager.Instance.ExecuteSelectedCards());
         
-        // Update UI to remove executed cards from hand display
         UpdateHandDisplay();
         
-        // After all movements complete, submit order
         if (GameManager.Instance.preparationStation.Count > 0)
         {
             GameManager.Instance.SubmitOrder(selectedSeat);
             selectedSeat = -1;
             
-            // Update customer menus after serving (customer may have left)
             UpdateCustomerMenus();
         }
         
-        // Re-enable interactions
         isExecutingOrder = false;
         SetUIInteractable(true);
     }
     
     void OnEndTurnClicked()
     {
-        // Play button click sound
         PlaySound(buttonClickSound);
+        
+        if (endTurnButton != null)
+            endTurnButton.interactable = false;
         
         GameManager.Instance.EndPlayerTurn();
         
-        // Don't refresh here - hand is empty at this moment
-        // UI will refresh when StartPlayerTurn() is called after patience phase
     }
     
-    // Helper method to play sound effects
     void PlaySound(AudioClip clip)
     {
         if (audioSource != null && clip != null)
         {
             audioSource.PlayOneShot(clip);
+        }
+    }
+    
+    void TogglePause()
+    {
+        if (isPaused)
+        {
+            ResumeGame();
+        }
+        else
+        {
+            PauseGame();
+        }
+    }
+    
+    void PauseGame()
+    {
+        isPaused = true;
+        Time.timeScale = 0f; // Pause the game
+        
+        if (pausePanel != null)
+            pausePanel.SetActive(true);
+        
+    }
+    
+    void ResumeGame()
+    {
+        isPaused = false;
+        Time.timeScale = 1f; // Resume the game
+        
+        if (pausePanel != null)
+            pausePanel.SetActive(false);
+    }
+    
+    void OnPauseContinueClicked()
+    {
+        PlaySound(buttonClickSound);
+        
+        ResumeGame();
+    }
+    
+    void OnPauseExitClicked()
+    {
+        PlaySound(buttonClickSound);
+        
+        Time.timeScale = 1f;
+        isPaused = false;
+        
+        UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+    }
+    
+    public void ShowHint(string message)
+    {
+        if (hintText == null || hintCanvasGroup == null) return;
+        
+        if (currentHintCoroutine != null)
+        {
+            StopCoroutine(currentHintCoroutine);
+        }
+        
+        currentHintCoroutine = StartCoroutine(ShowHintCoroutine(message));
+    }
+    
+    IEnumerator ShowHintCoroutine(string message)
+    {
+        hintText.text = message;
+        
+        float elapsedTime = 0f;
+        while (elapsedTime < hintFadeDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            hintCanvasGroup.alpha = Mathf.Lerp(0f, 1f, elapsedTime / hintFadeDuration);
+            yield return null;
+        }
+        hintCanvasGroup.alpha = 1f;
+        
+        yield return new WaitForSeconds(hintDisplayDuration);
+        
+        elapsedTime = 0f;
+        while (elapsedTime < hintFadeDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            hintCanvasGroup.alpha = Mathf.Lerp(1f, 0f, elapsedTime / hintFadeDuration);
+            yield return null;
+        }
+        hintCanvasGroup.alpha = 0f;
+        
+        currentHintCoroutine = null;
+    }
+    
+    public void HideHint()
+    {
+        if (currentHintCoroutine != null)
+        {
+            StopCoroutine(currentHintCoroutine);
+            currentHintCoroutine = null;
+        }
+        
+        if (hintCanvasGroup != null)
+        {
+            hintCanvasGroup.alpha = 0f;
         }
     }
 }

@@ -98,7 +98,6 @@ Slay The Spire + Overcooked/Dinner Dash
     {
         if (GameManager.Instance == null || MasakuCardManager.Instance == null) return;
         
-        // Test play cards
         if (Input.GetKeyDown(testPlayCard1))
         {
             MasakuCardManager.Instance.PlayCardByIndex(0);
@@ -120,7 +119,6 @@ Slay The Spire + Overcooked/Dinner Dash
             MasakuCardManager.Instance.PlayCardByIndex(4);
         }
         
-        // Test submit order to seats
         if (Input.GetKeyDown(testSubmitToSeat1))
         {
             GameManager.Instance.SubmitOrder(0);
@@ -138,7 +136,6 @@ Slay The Spire + Overcooked/Dinner Dash
             GameManager.Instance.SubmitOrder(3);
         }
         
-        // Test end turn
         if (Input.GetKeyDown(testEndTurn))
         {
             GameManager.Instance.EndPlayerTurn();

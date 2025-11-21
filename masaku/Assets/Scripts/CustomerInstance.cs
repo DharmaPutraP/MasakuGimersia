@@ -12,17 +12,104 @@ public class CustomerInstance : MonoBehaviour
     [Header("UI References")]
     public SpriteRenderer customerSprite; // Keep for backward compatibility
     public Animator customerAnimator; // NEW: Animator for customer animations
+    public Canvas patienceCanvas; // Canvas containing patience UI (heart image + text)
     public Transform patienceBarTransform; // The foreground bar that scales
     public Transform patienceBarBackground; // Optional: Background bar
     public SpriteRenderer patienceBarSprite; // To change color based on patience
     public TextMeshProUGUI orderDisplayText; // NEW: Text to show order
+    public TextMeshProUGUI patienceText; // NEW: Text to show patience like "20/20"
     
+    [Header("Patience Bar Settings")]
+    public int patienceSegments = 10; // Number of dividers/segments
+    public GameObject dividerPrefab; // Prefab for divider lines
+    public Transform dividersParent; // Parent object to hold all dividers
+    private List<GameObject> dividers = new List<GameObject>();
+    private Camera mainCamera;
+
     [Header("Sound Effects")]
     public AudioSource audioSource; // AudioSource for customer sounds
     public AudioClip barbarianAngrySound; // Sound when Barbarian gets angry
     public AudioClip wizardHappySound; // Sound when Wizard is satisfied (magical sound)
     
     private bool isServed = false;
+    
+    void Start()
+    {
+        mainCamera = Camera.main;
+        
+        if (patienceBarBackground != null && dividersParent != null)
+        {
+            CreatePatienceBarDividers();
+        }
+    }
+    
+    void LateUpdate()
+    {
+        if (mainCamera != null && patienceCanvas != null)
+        {
+            patienceCanvas.transform.LookAt(patienceCanvas.transform.position + mainCamera.transform.rotation * Vector3.forward,
+                mainCamera.transform.rotation * Vector3.up);
+            
+            patienceCanvas.transform.Rotate(0, 180, 0);
+        }
+        
+        if (mainCamera != null && patienceBarBackground != null)
+        {
+            patienceBarBackground.LookAt(patienceBarBackground.position + mainCamera.transform.rotation * Vector3.forward,
+                mainCamera.transform.rotation * Vector3.up);
+        }
+    }
+    
+    void CreatePatienceBarDividers()
+    {
+        foreach (GameObject divider in dividers)
+        {
+            if (divider != null)
+                Destroy(divider);
+        }
+        dividers.Clear();
+        
+        SpriteRenderer bgSprite = patienceBarBackground.GetComponent<SpriteRenderer>();
+        if (bgSprite == null) return;
+        
+        float barWidth = bgSprite.bounds.size.x;
+        float segmentWidth = barWidth / patienceSegments;
+        
+        for (int i = 1; i < patienceSegments; i++)
+        {
+            GameObject divider;
+            
+            if (dividerPrefab != null)
+            {
+                divider = Instantiate(dividerPrefab, dividersParent);
+            }
+            else
+            {
+                divider = new GameObject($"Divider_{i}");
+                divider.transform.SetParent(dividersParent);
+                
+                SpriteRenderer sr = divider.AddComponent<SpriteRenderer>();
+                sr.sprite = CreateLineSprite();
+                sr.color = new Color(0.3f, 0.3f, 0.3f, 0.8f); // Dark semi-transparent
+                sr.sortingOrder = bgSprite.sortingOrder + 2; // Above background and bar
+            }
+            
+            float xPosition = -barWidth / 2 + (segmentWidth * i);
+            divider.transform.localPosition = new Vector3(xPosition, 0, -0.01f);
+            divider.transform.localScale = new Vector3(0.02f, bgSprite.bounds.size.y * 1.2f, 1f);
+            
+            dividers.Add(divider);
+        }
+    }
+    
+    Sprite CreateLineSprite()
+    {
+        Texture2D texture = new Texture2D(1, 1);
+        texture.SetPixel(0, 0, Color.white);
+        texture.Apply();
+        
+        return Sprite.Create(texture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 100f);
+    }
     
     public void Initialize(Customer customer, int seat)
     {
@@ -31,36 +118,33 @@ public class CustomerInstance : MonoBehaviour
         seatIndex = seat;
         isServed = false;
         
-        // Use sprite renderer if no animator
+        if (patienceBarBackground != null)
+        {
+            patienceBarBackground.gameObject.SetActive(false);
+        }
+        if (patienceCanvas != null)
+        {
+            patienceCanvas.gameObject.SetActive(false);
+        }
+        
         if (customerSprite != null && customer.customerSprite != null)
         {
             customerSprite.sprite = customer.customerSprite;
         }
         
-        // Play sitting animation
         if (customerAnimator != null)
         {
-            customerAnimator.SetTrigger("Sit");
-            // Or use: customerAnimator.Play("Sitting");
+            customerAnimator.SetTrigger("SitDown");
         }
         
         UpdatePatienceBar();
         UpdateOrderDisplay(); // NEW: Update order display
-        Debug.Log($"{customer.customerName} duduk di kursi {seat} dengan kesabaran {currentPatience}");
     }
     
-    // NEW: Method to display required order
     void UpdateOrderDisplay()
     {
-        // if (orderDisplayText == null) return;
         
-        // string orderText = "";
-        // foreach (CardType cardType in customerData.requiredCards)
-        // {
-        //     orderText += cardType.ToString() + " ";
-        // }
         
-        // orderDisplayText.text = orderText;
     }
     
     public void DecreasePatience()
@@ -70,44 +154,31 @@ public class CustomerInstance : MonoBehaviour
         int oldPatience = currentPatience;
         currentPatience -= customerData.patienceDecayPerTurn;
         currentPatience = Mathf.Max(0, currentPatience);
-        
-        Debug.Log($"{customerData.customerName} patience: {oldPatience} → {currentPatience} (max: {customerData.maxPatience})");
-        
         UpdatePatienceBar();
         
         if (currentPatience <= 0)
         {
-            Debug.Log($"{customerData.customerName} patience reached 0! Leaving angry...");
             OnCustomerAngry();
         }
     }
     
     void OnCustomerAngry()
     {
-        Debug.Log($"{customerData.customerName} pergi dengan marah!");
-        
-        // Jika Barbarian, tambahkan curse dan kurangi reputasi ekstra
         if (customerData.isBarbarian)
         {
-            Debug.Log("Barbarian menambahkan CURSE ke deck Anda!");
-            
-            // Play Barbarian angry sound
             PlaySound(barbarianAngrySound);
             
             GameManager.Instance.AddCurseCard();
         }
         
-        // Kurangi reputasi (normal customer leaving)
         GameManager.Instance.LoseReputation(1);
         
-        // Hapus customer dari kursi
         GameManager.Instance.RemoveCustomer(seatIndex);
         Destroy(gameObject);
     }
     
     public bool TryServeOrder(List<CardType> comboCards)
     {
-        // Cek apakah kombo sesuai dengan pesanan
         if (IsOrderCorrect(comboCards))
         {
             OnOrderCorrect();
@@ -122,15 +193,12 @@ public class CustomerInstance : MonoBehaviour
     
     bool IsOrderCorrect(List<CardType> comboCards)
     {
-        // Harus memiliki jumlah kartu yang sama
         if (comboCards.Count != customerData.requiredCards.Count)
             return false;
         
-        // Buat list sementara untuk pengecekan
         List<CardType> requiredCopy = new List<CardType>(customerData.requiredCards);
         List<CardType> comboCopy = new List<CardType>(comboCards);
         
-        // Cek setiap kartu dalam combo
         foreach (CardType card in comboCopy)
         {
             if (requiredCopy.Contains(card))
@@ -143,46 +211,33 @@ public class CustomerInstance : MonoBehaviour
             }
         }
         
-        // Jika semua kartu cocok, requiredCopy harus kosong
         return requiredCopy.Count == 0;
     }
     
     void OnOrderCorrect()
     {
         isServed = true;
-        Debug.Log($"{customerData.customerName} puas! Memberikan +{customerData.focusReward} Fokus");
-        
-        // Play cheering animation
         if (customerAnimator != null)
         {
-            customerAnimator.SetTrigger("Cheer");
-            // Or use: customerAnimator.Play("Cheering");
+            customerAnimator.Play("Cheering");
         }
         
-        // Berikan reward fokus
         GameManager.Instance.AddFocus(customerData.focusReward);
         
-        // Jika Wizard dan dilayani cepat (>5 patience), beri boon
         if (customerData.isWizard && currentPatience > 5)
         {
-            Debug.Log("Wizard memberikan BOON!");
-            
-            // Play Wizard happy/magical sound (limited to 3-4 seconds)
             PlaySoundLimited(wizardHappySound, Random.Range(3f, 4f));
             
             GameManager.Instance.GiveWizardBoon();
         }
         
-        // Hapus customer dari kursi
         GameManager.Instance.RemoveCustomer(seatIndex);
         
-        // Animasi customer senang dan pergi
         StartCoroutine(CustomerLeaveHappy());
     }
     
     void OnOrderWrong()
     {
-        Debug.Log($"{customerData.customerName} pesanan salah! Kehilangan 1 Kesabaran");
         currentPatience -= 1;
         UpdatePatienceBar();
         
@@ -194,51 +249,154 @@ public class CustomerInstance : MonoBehaviour
     
     IEnumerator CustomerLeaveHappy()
     {
-        // Wait for cheer animation to play
         yield return new WaitForSeconds(1.5f);
         
-        // Optional: Play leaving animation
-        if (customerAnimator != null)
+        if (CustomerEntranceManager.Instance == null)
         {
-            customerAnimator.SetTrigger("Leave");
-            // Or use: customerAnimator.Play("Leaving");
-            yield return new WaitForSeconds(0.5f);
+            Destroy(gameObject);
+            yield break;
         }
         
+        if (customerAnimator != null)
+        {
+            customerAnimator.SetBool("IsWalking", true);
+        }
+        
+        Transform doorPos = CustomerEntranceManager.Instance.doorPosition;
+        if (doorPos != null)
+        {
+            yield return StartCoroutine(WalkToPosition(doorPos.position));
+        }
+        
+        if (CustomerEntranceManager.Instance.doorTransform != null)
+        {
+            CustomerEntranceManager.Instance.StartCoroutine(
+                OpenDoorAndPlaySound(CustomerEntranceManager.Instance.doorOpenRotation)
+            );
+            yield return new WaitForSeconds(0.5f); // Wait for door to start opening
+        }
+        
+        Transform spawnPoint = CustomerEntranceManager.Instance.entranceSpawnPoint;
+        if (spawnPoint != null)
+        {
+            yield return StartCoroutine(WalkToPosition(spawnPoint.position));
+        }
+        
+        if (CustomerEntranceManager.Instance.doorTransform != null)
+        {
+            CustomerEntranceManager.Instance.StartCoroutine(
+                CloseDoorAndPlaySound(CustomerEntranceManager.Instance.doorClosedRotation)
+            );
+            yield return new WaitForSeconds(0.3f);
+        }
         Destroy(gameObject);
     }
     
+    IEnumerator WalkToPosition(Vector3 targetPosition)
+    {
+        float walkSpeed = CustomerEntranceManager.Instance.customerWalkSpeed;
+        float rotationOffset = CustomerEntranceManager.Instance.customerRotationOffset;
+        float stoppingDistance = 0.1f;
+        
+        while (Vector3.Distance(transform.position, targetPosition) > stoppingDistance)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, targetPosition, walkSpeed * Time.deltaTime);
+            
+            Vector3 direction = (targetPosition - transform.position).normalized;
+            if (direction != Vector3.zero)
+            {
+                float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + rotationOffset;
+                transform.rotation = Quaternion.Euler(0f, targetAngle, 0f);
+            }
+            
+            yield return null;
+        }
+        
+        transform.position = targetPosition;
+    }
+    
+    IEnumerator OpenDoorAndPlaySound(float targetRotation)
+    {
+        if (CustomerEntranceManager.Instance.audioSource != null && CustomerEntranceManager.Instance.doorOpenSound != null)
+        {
+            CustomerEntranceManager.Instance.audioSource.PlayOneShot(CustomerEntranceManager.Instance.doorOpenSound);
+        }
+        
+        Transform door = CustomerEntranceManager.Instance.doorTransform;
+        Quaternion startRotation = door.rotation;
+        Quaternion targetRot = Quaternion.Euler(door.eulerAngles.x, targetRotation, door.eulerAngles.z);
+        
+        float elapsedTime = 0f;
+        float duration = 1f / CustomerEntranceManager.Instance.doorRotationSpeed;
+        
+        while (elapsedTime < duration)
+        {
+            door.rotation = Quaternion.Slerp(startRotation, targetRot, elapsedTime / duration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        
+        door.rotation = targetRot;
+    }
+    
+    IEnumerator CloseDoorAndPlaySound(float targetRotation)
+    {
+        if (CustomerEntranceManager.Instance.audioSource != null && CustomerEntranceManager.Instance.doorOpenSound != null)
+        {
+            CustomerEntranceManager.Instance.audioSource.PlayOneShot(CustomerEntranceManager.Instance.doorOpenSound);
+        }
+        
+        Transform door = CustomerEntranceManager.Instance.doorTransform;
+        Quaternion startRotation = door.rotation;
+        Quaternion targetRot = Quaternion.Euler(door.eulerAngles.x, targetRotation, door.eulerAngles.z);
+        
+        float elapsedTime = 0f;
+        float duration = 1f / CustomerEntranceManager.Instance.doorRotationSpeed;
+        
+        while (elapsedTime < duration)
+        {
+            door.rotation = Quaternion.Slerp(startRotation, targetRot, elapsedTime / duration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        
+        door.rotation = targetRot;
+    }
+    
+    
     void UpdatePatienceBar()
     {
-        if (patienceBarTransform == null) return;
-        
-        // Calculate patience percentage
-        float patiencePercent = (float)currentPatience / customerData.maxPatience;
-        
-        // Update bar scale
-        patienceBarTransform.localScale = new Vector3(patiencePercent, 1f, 1f);
-        
-        // Change bar color based on patience level
-        if (patienceBarSprite != null)
+        if (patienceBarBackground != null && !patienceBarBackground.gameObject.activeSelf)
         {
+            patienceBarBackground.gameObject.SetActive(true);
+        }
+        if (patienceCanvas != null && !patienceCanvas.gameObject.activeSelf)
+        {
+            patienceCanvas.gameObject.SetActive(true);
+        }
+        
+        if (patienceText != null)
+        {
+            patienceText.text = $"{currentPatience}/{customerData.maxPatience}";
+            
+            float patiencePercent = (float)currentPatience / customerData.maxPatience;
+            
             if (patiencePercent > 0.6f)
             {
-                // High patience - Green
-                patienceBarSprite.color = new Color(0.2f, 0.8f, 0.2f); // Green
+                patienceText.color = new Color(0.2f, 0.8f, 0.2f); // Green
             }
             else if (patiencePercent > 0.3f)
             {
-                // Medium patience - Yellow
-                patienceBarSprite.color = new Color(1f, 0.9f, 0.2f); // Yellow
+                patienceText.color = new Color(1f, 0.9f, 0.2f); // Yellow
             }
             else
             {
-                // Low patience - Red
-                patienceBarSprite.color = new Color(0.9f, 0.2f, 0.2f); // Red
+                patienceText.color = new Color(0.9f, 0.2f, 0.2f); // Red
             }
         }
         
-        Debug.Log($"{customerData.customerName} patience bar: {patiencePercent * 100:F0}%");
+            
+            
     }
     
     public bool IsServed()
@@ -251,54 +409,42 @@ public class CustomerInstance : MonoBehaviour
         return customerData;
     }
     
-    // Helper method to play customer sounds
     void PlaySound(AudioClip clip)
     {
         if (audioSource != null && clip != null)
         {
             audioSource.PlayOneShot(clip);
-            Debug.Log($"Playing customer sound: {clip.name}");
         }
         else if (clip == null)
         {
-            Debug.LogWarning("Customer sound clip is not assigned!");
         }
         else if (audioSource == null)
         {
-            Debug.LogWarning("AudioSource is not assigned in CustomerInstance!");
         }
     }
     
-    // Helper method to play sound with time limit
     void PlaySoundLimited(AudioClip clip, float duration)
     {
         if (audioSource != null && clip != null)
         {
             audioSource.clip = clip;
             audioSource.Play();
-            Debug.Log($"Playing customer sound (limited to {duration}s): {clip.name}");
-            
-            // Stop the sound after duration
             StartCoroutine(StopSoundAfterDelay(duration));
         }
         else if (clip == null)
         {
-            Debug.LogWarning("Customer sound clip is not assigned!");
         }
         else if (audioSource == null)
         {
-            Debug.LogWarning("AudioSource is not assigned in CustomerInstance!");
         }
     }
     
-    // Coroutine to stop sound after delay
     IEnumerator StopSoundAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
         if (audioSource != null && audioSource.isPlaying)
         {
             audioSource.Stop();
-            Debug.Log("Wizard sound stopped after time limit");
         }
     }
 }
