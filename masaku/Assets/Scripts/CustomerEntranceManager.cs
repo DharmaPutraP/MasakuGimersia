@@ -10,6 +10,7 @@ public class CustomerEntranceManager : MonoBehaviour
     public Transform doorTransform; 
     public Transform doorPosition; 
     public Transform entranceSpawnPoint; 
+    public Transform middlePosition;
     public Transform exitPosition; 
     public float doorOpenRotation = -82f; 
     public float doorClosedRotation = 90f; 
@@ -108,7 +109,9 @@ public class CustomerEntranceManager : MonoBehaviour
         {
             customerAnimator.SetBool("IsWalking", true);
         }
-        yield return StartCoroutine(MoveCustomerToPosition(customerObj.transform, doorPosition.position));
+
+
+        yield return StartCoroutine(MoveCustomerToPosition(customerObj.transform, middlePosition.position));
         
         yield return StartCoroutine(MoveCustomerToPosition(customerObj.transform, data.seatTransform.position));
         
