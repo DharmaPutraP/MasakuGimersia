@@ -31,6 +31,9 @@ public class CustomerInstance : MonoBehaviour
     public AudioClip barbarianAngrySound; 
     public AudioClip wizardHappySound; 
     
+    [Header("Highlight Effect")]
+    public GameObject highlightIndicator;
+    
     private bool isServed = false;
     
     void Start()
@@ -40,6 +43,111 @@ public class CustomerInstance : MonoBehaviour
         if (patienceBarBackground != null && dividersParent != null)
         {
             CreatePatienceBarDividers();
+        }
+        
+        Collider col = GetComponent<Collider>();
+        if (col == null)
+        {
+            col = gameObject.AddComponent<BoxCollider>();
+        }
+        
+        // If highlightIndicator is assigned in prefab, use it
+        // Otherwise, create one programmatically
+        if (highlightIndicator == null)
+        {
+            CreateHighlightIndicator();
+        }
+        else
+        {
+            // Start pulse animation for prefab indicator
+            StartCoroutine(PulseHighlight());
+        }
+        
+        if (highlightIndicator != null)
+        {
+            SpriteRenderer sr = highlightIndicator.AddComponent<SpriteRenderer>();
+            sr.sprite = CreateCircleSprite();
+            sr.color = new Color(1f, 1f, 0f, 0.8f);
+            sr.sortingOrder = -1;
+            highlightIndicator.transform.localScale = Vector3.one * 1f;
+            highlightIndicator.SetActive(false);
+        }
+    }
+    
+    void CreateHighlightIndicator()
+    {
+        highlightIndicator = new GameObject("HighlightIndicator");
+        highlightIndicator.transform.SetParent(transform);
+        highlightIndicator.transform.localPosition = new Vector3(0f, 2.76f, 0f);
+        
+        SpriteRenderer sr = highlightIndicator.AddComponent<SpriteRenderer>();
+        sr.sprite = CreateCircleSprite();
+        sr.color = new Color(1f, 1f, 0f, 0.8f);
+        sr.sortingOrder = -1;
+        
+        highlightIndicator.transform.localScale = Vector3.one * 0.5f;
+        
+        StartCoroutine(PulseHighlight());
+    }
+    
+    Sprite CreateCircleSprite()
+    {
+        int size = 64;
+        Texture2D tex = new Texture2D(size, size);
+        Color[] colors = new Color[size * size];
+        
+        Vector2 center = new Vector2(size / 2f, size / 2f);
+        float radius = size / 2f;
+        
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float dist = Vector2.Distance(new Vector2(x, y), center);
+                if (dist < radius)
+                {
+                    float alpha = 1f - (dist / radius);
+                    colors[y * size + x] = new Color(1f, 1f, 1f, alpha);
+                }
+                else
+                {
+                    colors[y * size + x] = Color.clear;
+                }
+            }
+        }
+        
+        tex.SetPixels(colors);
+        tex.Apply();
+        
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
+    }
+    
+    IEnumerator PulseHighlight()
+    {
+        while (true)
+        {
+            if (highlightIndicator != null && highlightIndicator.activeSelf)
+            {
+                float scale = 0.75f + Mathf.PingPong(Time.time * 2f, 0.2f);
+                highlightIndicator.transform.localScale = Vector3.one * scale;
+            }
+            yield return null;
+        }
+    }
+    
+    public void SetHighlight(bool active)
+    {
+        if (highlightIndicator != null)
+        {
+            highlightIndicator.SetActive(active);
+        }
+    }
+    
+    void OnMouseDown()
+    {
+        if (MasakuUI.Instance != null)
+        {
+            MasakuUI.Instance.OnCustomerClicked(seatIndex);
         }
     }
     
@@ -56,6 +164,12 @@ public class CustomerInstance : MonoBehaviour
         if (mainCamera != null && patienceBarBackground != null)
         {
             patienceBarBackground.LookAt(patienceBarBackground.position + mainCamera.transform.rotation * Vector3.forward,
+                mainCamera.transform.rotation * Vector3.up);
+        }
+        
+        if (mainCamera != null && highlightIndicator != null && highlightIndicator.activeSelf)
+        {
+            highlightIndicator.transform.LookAt(highlightIndicator.transform.position + mainCamera.transform.rotation * Vector3.forward,
                 mainCamera.transform.rotation * Vector3.up);
         }
     }
@@ -276,10 +390,18 @@ public class CustomerInstance : MonoBehaviour
             yield return new WaitForSeconds(0.5f); 
         }
         
-        Transform spawnPoint = CustomerEntranceManager.Instance.entranceSpawnPoint;
-        if (spawnPoint != null)
+        Transform exitPos = CustomerEntranceManager.Instance.exitPosition;
+        if (exitPos != null)
         {
-            yield return StartCoroutine(WalkToPosition(spawnPoint.position));
+            yield return StartCoroutine(WalkToPosition(exitPos.position));
+        }
+        else
+        {
+            Transform spawnPoint = CustomerEntranceManager.Instance.entranceSpawnPoint;
+            if (spawnPoint != null)
+            {
+                yield return StartCoroutine(WalkToPosition(spawnPoint.position));
+            }
         }
         
         if (CustomerEntranceManager.Instance.doorTransform != null)

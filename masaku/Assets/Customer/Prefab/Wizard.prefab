@@ -161,6 +161,7 @@ RectTransform:
   m_Children:
   - {fileID: 5996275126844654659}
   - {fileID: 6289257842802818228}
+  - {fileID: 5247632165639216115}
   m_Father: {fileID: 3353089757330703771}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -440,6 +441,37 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &8202271289937986977
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5247632165639216115}
+  m_Layer: 0
+  m_Name: HighlightIndicator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5247632165639216115
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8202271289937986977}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.28, y: 0.62, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 3924695065428439560}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2954968436617241200
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -564,6 +596,7 @@ MonoBehaviour:
   audioSource: {fileID: 7295649634093842453}
   barbarianAngrySound: {fileID: 0}
   wizardHappySound: {fileID: 8300000, guid: e03582b763e54d14db1d71e23d249064, type: 3}
+  highlightIndicator: {fileID: 8202271289937986977}
 --- !u!4 &3353089757330703771 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2f9b367db2cb74ffb96f404f85cdff91, type: 3}

@@ -246,7 +246,7 @@ public class GameManager : MonoBehaviour
             {
                 customerCount++;
                 customer.DecreasePatience();
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(0.2f);
             }
         }
         if (isDayEnding)
@@ -262,7 +262,7 @@ public class GameManager : MonoBehaviour
         {
             FillEmptySeats();
             
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.3f);
             StartPlayerTurn();
         }
     }

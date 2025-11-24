@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using DG.Tweening;
 
 public class MasakuUI : MonoBehaviour
 {
@@ -76,6 +77,7 @@ public class MasakuUI : MonoBehaviour
     private Dictionary<GameObject, int> menuToSeatIndex = new Dictionary<GameObject, int>(); 
     
     private int selectedSeat = -1;
+    private int highlightedSeat = -1;
     private bool isExecutingOrder = false; 
     private bool isTarikNafasMode = false; 
     private int tarikNafasCardIndex = -1; 
@@ -230,81 +232,54 @@ public class MasakuUI : MonoBehaviour
             yield break;
         }
         
-        float elapsedTime = 0f;
-        float shuffleDuration = shuffleAnimationDuration;
+        float phaseDuration = shuffleAnimationDuration / 3f;
         
-        while (elapsedTime < shuffleDuration * 0.3f)
+        Sequence shuffleSequence = DOTween.Sequence();
+        
+        foreach (var data in cardData)
         {
-            elapsedTime += Time.deltaTime;
-            float progress = elapsedTime / (shuffleDuration * 0.3f);
-            float easeProgress = EaseInOut(progress);
-            
-            foreach (var data in cardData)
+            if (data.rectTransform != null)
             {
-                if (data.rectTransform != null)
-                {
-                    data.rectTransform.anchoredPosition = Vector3.Lerp(data.originalPosition, Vector3.zero, easeProgress);
-                    float rotation = Mathf.Lerp(0, 720f, easeProgress);
-                    data.rectTransform.localRotation = Quaternion.Euler(0, 0, rotation);
-                    data.rectTransform.localScale = Vector3.Lerp(data.originalScale, data.originalScale * 0.5f, easeProgress);
-                }
+                shuffleSequence.Join(data.rectTransform.DOAnchorPos(new Vector2(500f,-50f), phaseDuration).SetEase(Ease.InOutQuad));
+                shuffleSequence.Join(data.rectTransform.DORotate(new Vector3(0, 0, 720f), phaseDuration, RotateMode.FastBeyond360).SetEase(Ease.InOutQuad));
+                shuffleSequence.Join(data.rectTransform.DOScale(data.originalScale * 0.5f, phaseDuration).SetEase(Ease.InOutQuad));
             }
-            
-            yield return null;
         }
         
-        float spinStart = elapsedTime;
-        while (elapsedTime < shuffleDuration * 0.6f)
-        {
-            elapsedTime += Time.deltaTime;
-            float spinTime = elapsedTime - spinStart;
-            
-            foreach (var data in cardData)
-            {
-                if (data.rectTransform != null)
-                {
-                    float rotation = (spinTime * 720f) % 360f;
-                    float wobbleX = Mathf.Sin(spinTime * 20f) * 30f;
-                    float wobbleY = Mathf.Cos(spinTime * 20f) * 30f;
-                    data.rectTransform.anchoredPosition = new Vector3(wobbleX, wobbleY, 0);
-                    data.rectTransform.localRotation = Quaternion.Euler(0, 0, rotation);
-                }
-            }
-            
-            yield return null;
-        }
+        shuffleSequence.AppendInterval(0.1f);
         
-        float expandStart = elapsedTime;
-        while (elapsedTime < shuffleDuration)
+        foreach (var data in cardData)
         {
-            elapsedTime += Time.deltaTime;
-            float progress = (elapsedTime - expandStart) / (shuffleDuration * 0.4f);
-            float easeProgress = EaseInOut(progress);
-            
-            foreach (var data in cardData)
+            if (data.rectTransform != null)
             {
-                if (data.rectTransform != null)
-                {
-                    data.rectTransform.anchoredPosition = Vector3.Lerp(data.rectTransform.anchoredPosition, data.originalPosition, easeProgress);
-                    data.rectTransform.localRotation = Quaternion.Lerp(data.rectTransform.localRotation, data.originalRotation, easeProgress);
-                    data.rectTransform.localScale = Vector3.Lerp(data.rectTransform.localScale, data.originalScale, easeProgress);
-                }
+                shuffleSequence.Join(data.rectTransform.DORotate(new Vector3(0, 0, 1440f), phaseDuration, RotateMode.FastBeyond360).SetEase(Ease.Linear));
             }
-            
-            yield return null;
         }
         
         foreach (var data in cardData)
         {
             if (data.rectTransform != null)
             {
-                data.rectTransform.anchoredPosition = data.originalPosition;
-                data.rectTransform.localRotation = data.originalRotation;
-                data.rectTransform.localScale = data.originalScale;
+                shuffleSequence.Join(data.rectTransform.DOAnchorPos(data.originalPosition, phaseDuration).SetEase(Ease.InOutQuad));
+                shuffleSequence.Join(data.rectTransform.DORotate(data.originalRotation.eulerAngles, phaseDuration, RotateMode.Fast).SetEase(Ease.InOutQuad));
+                shuffleSequence.Join(data.rectTransform.DOScale(data.originalScale, phaseDuration).SetEase(Ease.InOutQuad));
             }
         }
         
-        isShuffling = false;
+        shuffleSequence.OnComplete(() => {
+            foreach (var data in cardData)
+            {
+                if (data.rectTransform != null)
+                {
+                    data.rectTransform.anchoredPosition = data.originalPosition;
+                    data.rectTransform.localRotation = data.originalRotation;
+                    data.rectTransform.localScale = data.originalScale;
+                }
+            }
+            isShuffling = false;
+        });
+        
+        yield return shuffleSequence.WaitForCompletion();
     }
     
     private class CardAnimData
@@ -619,11 +594,7 @@ public class MasakuUI : MonoBehaviour
         
         CustomerInstance[] activeCustomers = GameManager.Instance.GetActiveCustomers();
         
-        if (!isExecutingOrder)
-        {
-            MasakuCardManager.Instance.ClearSelection();
-            selectedSeat = -1;
-        }
+        int previousMenuCount = activeMenus.Count;
         
         foreach (GameObject menu in activeMenus)
         {
@@ -687,6 +658,12 @@ public class MasakuUI : MonoBehaviour
             }
         }
         
+        if (!isExecutingOrder && previousMenuCount > menuCount)
+        {
+            MasakuCardManager.Instance.ClearSelection();
+            selectedSeat = -1;
+        }
+        
         UpdateMenuScales();
         
         UpdateButtonStates();
@@ -732,6 +709,15 @@ public class MasakuUI : MonoBehaviour
             return;
         }
         
+        if (highlightedSeat == seatIndex)
+        {
+            highlightedSeat = -1;
+        }
+        else
+        {
+            highlightedSeat = seatIndex;
+        }
+        
         if (selectedSeat == seatIndex)
         {
             selectedSeat = -1;
@@ -742,6 +728,36 @@ public class MasakuUI : MonoBehaviour
         }
         
         UpdateMenuScales();
+        UpdateCustomerHighlight();
+    }
+    
+    public void OnCustomerClicked(int seatIndex)
+    {
+        if (isExecutingOrder)
+        {
+            return;
+        }
+        
+        if (highlightedSeat == seatIndex)
+        {
+            highlightedSeat = -1;
+        }
+        else
+        {
+            highlightedSeat = seatIndex;
+        }
+        
+        if (selectedSeat == seatIndex)
+        {
+            selectedSeat = -1;
+        }
+        else
+        {
+            selectedSeat = seatIndex;
+        }
+        
+        UpdateMenuScales();
+        UpdateCustomerHighlight();
     }
     
     void UpdateMenuScales()
@@ -763,9 +779,22 @@ public class MasakuUI : MonoBehaviour
                         if (outline == null)
                         {
                             outline = menu.AddComponent<UnityEngine.UI.Outline>();
-                            outline.effectColor = Color.yellow; 
-                            outline.effectDistance = new Vector2(5, -5); 
+                            outline.effectColor = Color.black; 
+                            outline.effectDistance = new Vector2(10, -10); 
                         }
+                        outline.enabled = true;
+                    }
+                    else if (menuSeat == highlightedSeat && highlightedSeat >= 0)
+                    {
+                        menuRect.localScale = Vector3.one * 1.15f;
+                        
+                        UnityEngine.UI.Outline outline = menu.GetComponent<UnityEngine.UI.Outline>();
+                        if (outline == null)
+                        {
+                            outline = menu.AddComponent<UnityEngine.UI.Outline>();
+                        }
+                        outline.effectColor = Color.yellow;
+                        outline.effectDistance = new Vector2(8, -8);
                         outline.enabled = true;
                     }
                     else
@@ -778,6 +807,26 @@ public class MasakuUI : MonoBehaviour
                             outline.enabled = false;
                         }
                     }
+                }
+            }
+        }
+    }
+    
+    void UpdateCustomerHighlight()
+    {
+        CustomerInstance[] customers = GameManager.Instance.GetActiveCustomers();
+        
+        for (int i = 0; i < customers.Length; i++)
+        {
+            if (customers[i] != null)
+            {
+                if (i == highlightedSeat && highlightedSeat >= 0)
+                {
+                    customers[i].SetHighlight(true);
+                }
+                else
+                {
+                    customers[i].SetHighlight(false);
                 }
             }
         }
@@ -945,6 +994,13 @@ public class MasakuUI : MonoBehaviour
     void OnEndTurnClicked()
     {
         PlaySound(buttonClickSound);
+        
+        if (isTarikNafasMode)
+        {
+            isTarikNafasMode = false;
+            tarikNafasCardIndex = -1;
+            UpdateHandDisplay();
+        }
         
         if (endTurnButton != null)
             endTurnButton.interactable = false;

@@ -10,6 +10,7 @@ public class CustomerEntranceManager : MonoBehaviour
     public Transform doorTransform; 
     public Transform doorPosition; 
     public Transform entranceSpawnPoint; 
+    public Transform exitPosition; 
     public float doorOpenRotation = -82f; 
     public float doorClosedRotation = 90f; 
     public float doorRotationSpeed = 2f; 

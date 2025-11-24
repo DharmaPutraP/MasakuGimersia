@@ -457,6 +457,8 @@ public class MasakuCardManager : MonoBehaviour
             hand.Remove(card);
             discardPile.Add(card);
         }
+        
+        shouldPlayShuffleAnimation = true;
     }
     
     public void AddCurseToDiscard()
