@@ -3458,6 +3458,14 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 19800000, guid: ab1112643ee572748b01dede71158272, type: 3}
+      propertyPath: ShapeModule.type
+      value: 17
+      objectReference: {fileID: 0}
+    - target: {fileID: 19800000, guid: ab1112643ee572748b01dede71158272, type: 3}
+      propertyPath: ShapeModule.radiusThickness
+      value: 1.0000
+      objectReference: {fileID: 0}
+    - target: {fileID: 19800000, guid: ab1112643ee572748b01dede71158272, type: 3}
       propertyPath: InitialModule.startSize.scalar
       value: 0.26
       objectReference: {fileID: 0}
@@ -13319,6 +13327,8 @@ MonoBehaviour:
   doorTransform: {fileID: 2108570681}
   doorPosition: {fileID: 2108570681}
   entranceSpawnPoint: {fileID: 1410546985}
+  middlePosition: {fileID: 0}
+  exitPosition: {fileID: 0}
   doorOpenRotation: 0
   doorClosedRotation: 90
   doorRotationSpeed: 2
