@@ -370,6 +370,7 @@
 "Assets/Scripts/PlayerMovement.cs"
 "Assets/Scripts/SceneManager.cs"
 "Assets/Scripts/ScreenFade.cs"
+"Assets/Scripts/WalkSmokeEffect.cs"
 -langversion:9.0
 /deterministic
 /optimize+

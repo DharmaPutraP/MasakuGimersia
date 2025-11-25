@@ -59,7 +59,27 @@ public class GameManager : MonoBehaviour
     public ActionCard wizardBoonDraw; 
     public ActionCard wizardBoonFocus; 
     
+    [Header("Timer")]
+    private float gameTimer = 0f;
+    private bool isTimerRunning = false;
+    
     public bool isPlayerTurn = true;
+    
+    public float GetGameTime()
+    {
+        return gameTimer;
+    }
+    
+    public void StartTimer()
+    {
+        isTimerRunning = true;
+        gameTimer = 0f;
+    }
+    
+    public void StopTimer()
+    {
+        isTimerRunning = false;
+    }
     
     void Awake()
     {
@@ -76,11 +96,16 @@ public class GameManager : MonoBehaviour
     
     void Start()
     {
+        StartTimer();
         StartDay(currentDay);
     }
     
     void Update()
     {
+        if (isTimerRunning)
+        {
+            gameTimer += Time.deltaTime;
+        }
     }
     
     public void StartDay(int day)
@@ -461,6 +486,17 @@ public class GameManager : MonoBehaviour
     
     void Victory()
     {
+        StopTimer();
+        
+        float currentTime = gameTimer;
+        float bestTime = PlayerPrefs.GetFloat("BestTime", float.MaxValue);
+        
+        if (currentTime < bestTime)
+        {
+            PlayerPrefs.SetFloat("BestTime", currentTime);
+        }
+        
+        PlayerPrefs.SetFloat("LastGameTime", currentTime);
         PlayerPrefs.SetInt("ShowEndingCutscene", 1);
         PlayerPrefs.Save();
         
