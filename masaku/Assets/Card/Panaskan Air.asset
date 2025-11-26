@@ -17,8 +17,11 @@ MonoBehaviour:
   focusCost: 1
   pickupTag: 
   targetTag: Stove
-  cardImage: {fileID: 21300000, guid: 159059cad1dfabf46a60cbe8599353b5, type: 3}
+  cardImage: {fileID: 21300000, guid: 4cbe49447be47c14e9d676abbccd546b, type: 3}
   description: 
   isSpecialCard: 0
   discardCount: 0
   drawCount: 0
+  focusGrant: 0
+  isCurseCard: 0
+  isBoonCard: 0
