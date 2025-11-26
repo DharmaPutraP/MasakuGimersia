@@ -48,6 +48,11 @@ public class MainMenuManager : MonoBehaviour
     public float displayDuration = 2f; 
     private CanvasGroup cutsceneImageCanvasGroup; 
     public Image backgroundImagePlay;
+    public Button skipCutsceneButton;
+    private bool skipCutscene = false;
+    
+    [Header("Best Time Display")]
+    public TextMeshProUGUI bestTimeText;
     
     void Start()
     {
@@ -71,6 +76,9 @@ public class MainMenuManager : MonoBehaviour
         
         if (losePanelCloseButton != null)
             losePanelCloseButton.onClick.AddListener(OnLosePanelCloseClicked);
+        
+        if (skipCutsceneButton != null)
+            skipCutsceneButton.onClick.AddListener(OnSkipCutsceneClicked);
 
         if (tutorialPanel != null)
             tutorialPanel.SetActive(false);
@@ -97,6 +105,11 @@ public class MainMenuManager : MonoBehaviour
                     cutsceneImageCanvasGroup = cutsceneImage.gameObject.AddComponent<CanvasGroup>();
             }
         }
+        
+        if (skipCutsceneButton != null)
+            skipCutsceneButton.gameObject.SetActive(false);
+        
+        UpdateBestTimeDisplay();
         
         if (PlayerPrefs.GetInt("ShowEndingCutscene", 0) == 1)
         {
@@ -221,9 +234,16 @@ public class MainMenuManager : MonoBehaviour
             losePanel.SetActive(false);
     }
     
+    public void OnSkipCutsceneClicked()
+    {
+        skipCutscene = true;
+    }
+    
     IEnumerator PlayCutsceneSequence()
     {
         backgroundImagePlay.enabled = true;
+        skipCutscene = false;
+        
         if (cutscenePanel == null || cutsceneImage == null || cutsceneSprites == null || cutsceneSprites.Length == 0)
         {
             UnityEngine.SceneManagement.SceneManager.LoadScene("MainScene");
@@ -232,19 +252,34 @@ public class MainMenuManager : MonoBehaviour
         
         cutscenePanel.SetActive(true);
         
+        if (skipCutsceneButton != null)
+            skipCutsceneButton.gameObject.SetActive(true);
+        
         for (int i = 0; i < cutsceneSprites.Length; i++)
         {
+            if (skipCutscene)
+                break;
+                
             if (cutsceneSprites[i] != null)
             {
                 cutsceneImage.sprite = cutsceneSprites[i];
                 
                 yield return StartCoroutine(FadeCutscene(0f, 1f, fadeDuration));
                 
+                if (skipCutscene)
+                    break;
+                
                 yield return new WaitForSeconds(displayDuration);
+                
+                if (skipCutscene)
+                    break;
                 
                 yield return StartCoroutine(FadeCutscene(1f, 0f, fadeDuration));
             }
         }
+        
+        if (skipCutsceneButton != null)
+            skipCutsceneButton.gameObject.SetActive(false);
         
         cutscenePanel.SetActive(false);
         
@@ -269,6 +304,8 @@ public class MainMenuManager : MonoBehaviour
     
     IEnumerator PlayEndingCutscene()
     {
+        skipCutscene = false;
+        
         if (cutscenePanel == null || cutsceneImage == null || endingCutsceneSprite == null)
         {
             ShowCreditsPanel();
@@ -282,13 +319,20 @@ public class MainMenuManager : MonoBehaviour
         
         cutscenePanel.SetActive(true);
         
+        if (skipCutsceneButton != null)
+            skipCutsceneButton.gameObject.SetActive(true);
+        
         cutsceneImage.sprite = endingCutsceneSprite;
         
         yield return StartCoroutine(FadeCutscene(0f, 1f, fadeDuration));
         
-        yield return new WaitForSeconds(displayDuration + 1f);
+        if (!skipCutscene)
+            yield return new WaitForSeconds(displayDuration + 1f);
         
         yield return StartCoroutine(FadeCutscene(1f, 0f, fadeDuration));
+        
+        if (skipCutsceneButton != null)
+            skipCutsceneButton.gameObject.SetActive(false);
         
         cutscenePanel.SetActive(false);
         
@@ -309,6 +353,25 @@ public class MainMenuManager : MonoBehaviour
         if (audioSource != null)
         {
             audioSource.Stop();
+        }
+    }
+    
+    void UpdateBestTimeDisplay()
+    {
+        if (bestTimeText != null)
+        {
+            float bestTime = PlayerPrefs.GetFloat("BestTime", -1f);
+            
+            if (bestTime > 0 && bestTime != float.MaxValue)
+            {
+                int minutes = Mathf.FloorToInt(bestTime / 60f);
+                int seconds = Mathf.FloorToInt(bestTime % 60f);
+                bestTimeText.text = string.Format("Best Time: {0:00}:{1:00}", minutes, seconds);
+            }
+            else
+            {
+                bestTimeText.text = "Best Time: --:--";
+            }
         }
     }
 }

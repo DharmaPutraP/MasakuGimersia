@@ -89,6 +89,7 @@ public class CustomerEntranceManager : MonoBehaviour
         GameObject customerObj = Instantiate(data.customerPrefab, entranceSpawnPoint.position, Quaternion.identity);
         CustomerInstance customerInstance = customerObj.GetComponent<CustomerInstance>();
         Animator customerAnimator = customerObj.GetComponent<Animator>();
+        WalkSmokeEffect smokeEffect = customerObj.GetComponent<WalkSmokeEffect>();
         
         if (customerInstance == null)
         {
@@ -109,7 +110,11 @@ public class CustomerEntranceManager : MonoBehaviour
         {
             customerAnimator.SetBool("IsWalking", true);
         }
-
+        
+        if (smokeEffect != null)
+        {
+            smokeEffect.SetWalkingState(true);
+        }
 
         yield return StartCoroutine(MoveCustomerToPosition(customerObj.transform, middlePosition.position));
         
@@ -119,6 +124,12 @@ public class CustomerEntranceManager : MonoBehaviour
         {
             customerAnimator.SetBool("IsWalking", false);
         }
+        
+        if (smokeEffect != null)
+        {
+            smokeEffect.SetWalkingState(false);
+        }
+        
         if (customerAnimator != null)
         {
             customerAnimator.SetTrigger("SitDown"); 

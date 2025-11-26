@@ -22,6 +22,9 @@ public class MasakuUI : MonoBehaviour
     [Header("Day Display")]
     public TextMeshProUGUI dayText;
     
+    [Header("Timer Display")]
+    public TextMeshProUGUI timerText;
+    
     [Header("Hand Display")]
     public Transform handContainer;
     public GameObject cardUIPrefab;
@@ -138,6 +141,7 @@ public class MasakuUI : MonoBehaviour
         UpdateFocusDisplay();
         UpdateReputationDisplay();
         UpdateDayDisplay();
+        UpdateTimerDisplay();
         UpdatePreparationStationDisplay();
     }
     
@@ -146,6 +150,7 @@ public class MasakuUI : MonoBehaviour
         UpdateFocusDisplay();
         UpdateReputationDisplay();
         UpdateDayDisplay();
+        UpdateTimerDisplay();
         UpdateHandDisplay();
         UpdatePreparationStationDisplay();
         UpdateCustomerMenus(); 
@@ -194,6 +199,17 @@ public class MasakuUI : MonoBehaviour
         if (dayText != null)
         {
             dayText.text = $"Hari {GameManager.Instance.currentDay}/7";
+        }
+    }
+    
+    void UpdateTimerDisplay()
+    {
+        if (timerText != null)
+        {
+            float time = GameManager.Instance.GetGameTime();
+            int minutes = Mathf.FloorToInt(time / 60f);
+            int seconds = Mathf.FloorToInt(time % 60f);
+            timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
         }
     }
     
@@ -409,7 +425,7 @@ public class MasakuUI : MonoBehaviour
                 
                 if (isTarikNafasMode && index == tarikNafasCardIndex)
                 {
-                    cardUI.transform.localScale = Vector3.one * 1.3f;
+                    cardUI.transform.localScale = Vector3.one * 1.15f;
                     cardImage.color = new Color(0.5f, 1f, 0.5f); 
                 }
                 else if (card.isCurseCard)
@@ -421,18 +437,18 @@ public class MasakuUI : MonoBehaviour
                 {
                     if (card.isBoonCard)
                     {
-                        cardUI.transform.localScale = Vector3.one * 1.3f;
+                        cardUI.transform.localScale = Vector3.one * 1.15f;
                         cardImage.color = new Color(1f, 1f, 0.5f, 1f); 
                     }
                     else
                     {
-                        cardUI.transform.localScale = Vector3.one * 1.2f; 
+                        cardUI.transform.localScale = Vector3.one * 1.1f; 
                         cardImage.color = Color.white; 
                     }
                 }
                 else if (card.isBoonCard)
                 {
-                    cardUI.transform.localScale = Vector3.one * 1.15f; 
+                    cardUI.transform.localScale = Vector3.one * 1.1f; 
                     cardImage.color = new Color(1f, 0.9f, 0.3f, 1f); 
                 }
                 else
@@ -773,7 +789,7 @@ public class MasakuUI : MonoBehaviour
                     
                     if (menuSeat == selectedSeat && selectedSeat >= 0)
                     {
-                        menuRect.localScale = Vector3.one * 1.2f;
+                        menuRect.localScale = Vector3.one * 1.1f;
                         
                         UnityEngine.UI.Outline outline = menu.GetComponent<UnityEngine.UI.Outline>();
                         if (outline == null)
@@ -786,7 +802,7 @@ public class MasakuUI : MonoBehaviour
                     }
                     else if (menuSeat == highlightedSeat && highlightedSeat >= 0)
                     {
-                        menuRect.localScale = Vector3.one * 1.15f;
+                        menuRect.localScale = Vector3.one * 1.08f;
                         
                         UnityEngine.UI.Outline outline = menu.GetComponent<UnityEngine.UI.Outline>();
                         if (outline == null)
@@ -1034,6 +1050,8 @@ public class MasakuUI : MonoBehaviour
         isPaused = true;
         Time.timeScale = 0f; 
         
+        AudioListener.pause = true;
+        
         if (pausePanel != null)
             pausePanel.SetActive(true);
         
@@ -1043,6 +1061,8 @@ public class MasakuUI : MonoBehaviour
     {
         isPaused = false;
         Time.timeScale = 1f; 
+        
+        AudioListener.pause = false;
         
         if (pausePanel != null)
             pausePanel.SetActive(false);
@@ -1060,6 +1080,7 @@ public class MasakuUI : MonoBehaviour
         PlaySound(buttonClickSound);
         
         Time.timeScale = 1f;
+        AudioListener.pause = false;
         isPaused = false;
         
         UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");

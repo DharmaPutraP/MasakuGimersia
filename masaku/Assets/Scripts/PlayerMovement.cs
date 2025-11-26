@@ -28,6 +28,9 @@ public class PlayerMovement : MonoBehaviour
     public AudioClip cookingSound; 
     public AudioClip servingSound; 
     
+    [Header("Walk Effect")]
+    private WalkSmokeEffect smokeEffect;
+    
     private Vector3 targetPosition;
     private bool isMoving = false;
     private bool isWaiting = false; 
@@ -35,6 +38,11 @@ public class PlayerMovement : MonoBehaviour
     private Queue<Vector3> movementQueue = new Queue<Vector3>();
     private Queue<string> locationTagQueue = new Queue<string>(); 
     private bool hasPickedUpIngredient = false;
+    
+    void Start()
+    {
+        smokeEffect = GetComponent<WalkSmokeEffect>();
+    }
     
     void Update()
     {
@@ -74,6 +82,11 @@ public class PlayerMovement : MonoBehaviour
             if (animator != null)
             {
                 animator.SetBool("IsWalking", true);
+            }
+            
+            if (smokeEffect != null)
+            {
+                smokeEffect.SetWalkingState(true);
             }
             
             PlaySound(walkingSound, true); 
@@ -138,6 +151,11 @@ public class PlayerMovement : MonoBehaviour
             animator.SetBool("IsWalking", false);
         }
         
+        if (smokeEffect != null)
+        {
+            smokeEffect.SetWalkingState(false);
+        }
+        
         StopSound();
         if (movementQueue.Count > 0)
         {
@@ -182,6 +200,11 @@ public class PlayerMovement : MonoBehaviour
             if (animator != null)
             {
                 animator.SetBool("IsWalking", true);
+            }
+            
+            if (smokeEffect != null)
+            {
+                smokeEffect.SetWalkingState(true);
             }
             
             PlaySound(walkingSound, true);
