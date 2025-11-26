@@ -29,15 +29,29 @@ public class CustomerInstance : MonoBehaviour
     [Header("Sound Effects")]
     public AudioSource audioSource; 
     public AudioClip barbarianAngrySound; 
-    public AudioClip wizardHappySound; 
+    public AudioClip wizardHappySound;
+    public AudioClip happyEmoteSound;
+    public AudioClip angryEmoteSound; 
     
     [Header("Highlight Effect")]
     public GameObject highlightIndicator;
+    
+    [Header("Emote System")]
+    public UnityEngine.UI.Image happyEmoteImage;
+    public UnityEngine.UI.Image angryEmoteImage;
+    public float emoteDuration = 2f;
+    public float emotePopDuration = 0.3f;
+    public float emoteFadeDuration = 0.3f;
     
     private bool isServed = false;
     
     void Start()
     {
+        if(happyEmoteImage != null && angryEmoteImage != null)
+        {
+            happyEmoteImage.gameObject.SetActive(false);
+            angryEmoteImage.gameObject.SetActive(false);
+        }
         mainCamera = Camera.main;
         
         if (patienceBarBackground != null && dividersParent != null)
@@ -72,6 +86,7 @@ public class CustomerInstance : MonoBehaviour
             highlightIndicator.transform.localScale = Vector3.one * 1f;
             highlightIndicator.SetActive(false);
         }
+        
     }
     
     void CreateHighlightIndicator()
@@ -172,6 +187,7 @@ public class CustomerInstance : MonoBehaviour
             highlightIndicator.transform.LookAt(highlightIndicator.transform.position + mainCamera.transform.rotation * Vector3.forward,
                 mainCamera.transform.rotation * Vector3.up);
         }
+        
     }
     
     void CreatePatienceBarDividers()
@@ -278,6 +294,9 @@ public class CustomerInstance : MonoBehaviour
     
     void OnCustomerAngry()
     {
+        ShowAngryEmote();
+        PlaySound(angryEmoteSound);
+        
         if (customerData.isBarbarian)
         {
             PlaySound(barbarianAngrySound);
@@ -286,6 +305,61 @@ public class CustomerInstance : MonoBehaviour
         }
         
         GameManager.Instance.LoseReputation(1);
+        
+        StartCoroutine(CustomerLeaveAngry());
+    }
+    
+    IEnumerator CustomerLeaveAngry()
+    {
+        yield return new WaitForSeconds(1.5f);
+        
+        if (CustomerEntranceManager.Instance == null)
+        {
+            GameManager.Instance.RemoveCustomer(seatIndex);
+            Destroy(gameObject);
+            yield break;
+        }
+        
+        if (customerAnimator != null)
+        {
+            customerAnimator.SetBool("IsWalking", true);
+        }
+        
+        Transform doorPos = CustomerEntranceManager.Instance.doorPosition;
+        if (doorPos != null)
+        {
+            yield return StartCoroutine(WalkToPosition(doorPos.position));
+        }
+        
+        if (CustomerEntranceManager.Instance.doorTransform != null)
+        {
+            CustomerEntranceManager.Instance.StartCoroutine(
+                OpenDoorAndPlaySound(CustomerEntranceManager.Instance.doorOpenRotation)
+            );
+            yield return new WaitForSeconds(0.5f);
+        }
+        
+        Transform exitPos = CustomerEntranceManager.Instance.exitPosition;
+        if (exitPos != null)
+        {
+            yield return StartCoroutine(WalkToPosition(exitPos.position));
+        }
+        else
+        {
+            Transform spawnPoint = CustomerEntranceManager.Instance.entranceSpawnPoint;
+            if (spawnPoint != null)
+            {
+                yield return StartCoroutine(WalkToPosition(spawnPoint.position));
+            }
+        }
+        
+        if (CustomerEntranceManager.Instance.doorTransform != null)
+        {
+            CustomerEntranceManager.Instance.StartCoroutine(
+                CloseDoorAndPlaySound(CustomerEntranceManager.Instance.doorClosedRotation)
+            );
+            yield return new WaitForSeconds(0.3f);
+        }
         
         GameManager.Instance.RemoveCustomer(seatIndex);
         Destroy(gameObject);
@@ -331,6 +405,10 @@ public class CustomerInstance : MonoBehaviour
     void OnOrderCorrect()
     {
         isServed = true;
+        
+        ShowHappyEmote();
+        PlaySound(happyEmoteSound);
+        
         if (customerAnimator != null)
         {
             customerAnimator.Play("Cheering");
@@ -352,6 +430,9 @@ public class CustomerInstance : MonoBehaviour
     
     void OnOrderWrong()
     {
+        ShowAngryEmote();
+        PlaySound(angryEmoteSound);
+        
         currentPatience -= 1;
         UpdatePatienceBar();
         
@@ -559,6 +640,101 @@ public class CustomerInstance : MonoBehaviour
         else if (audioSource == null)
         {
         }
+    }
+    
+    public void ShowHappyEmote()
+    {
+        if (happyEmoteImage == null)
+        {
+            Debug.LogWarning("Happy emote image not assigned on " + gameObject.name);
+            return;
+        }
+        
+        StopCoroutine("HappyEmoteCoroutine");
+        StopCoroutine("AngryEmoteCoroutine");
+        StartCoroutine(HappyEmoteCoroutine());
+    }
+    
+    public void ShowAngryEmote()
+    {
+        if (angryEmoteImage == null)
+        {
+            Debug.LogWarning("Angry emote image not assigned on " + gameObject.name);
+            return;
+        }
+        
+        StopCoroutine("HappyEmoteCoroutine");
+        StopCoroutine("AngryEmoteCoroutine");
+        StartCoroutine(AngryEmoteCoroutine());
+    }
+    
+    IEnumerator HappyEmoteCoroutine()
+    {
+        yield return StartCoroutine(PlayEmoteAnimation(happyEmoteImage));
+    }
+    
+    IEnumerator AngryEmoteCoroutine()
+    {
+        yield return StartCoroutine(PlayEmoteAnimation(angryEmoteImage));
+    }
+    
+    IEnumerator PlayEmoteAnimation(UnityEngine.UI.Image emoteImage)
+    {
+        if (emoteImage == null) yield break;
+        
+        emoteImage.gameObject.SetActive(true);
+        emoteImage.color = Color.white;
+        
+        RectTransform emoteRect = emoteImage.GetComponent<RectTransform>();
+        if (emoteRect == null)
+        {
+            Debug.LogError("No RectTransform on emote image!");
+            emoteImage.gameObject.SetActive(false);
+            yield break;
+        }
+        
+        Vector2 startPos = new Vector2(0.5f, 0.89f);
+        Vector2 midPos = startPos + new Vector2(0f, 0.05f);
+        Vector2 endPos = midPos + new Vector2(0f, 0.03f);
+        
+        emoteRect.anchoredPosition = startPos;
+        emoteRect.localScale = Vector3.zero;
+        
+        CanvasGroup canvasGroup = emoteImage.GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+        {
+            canvasGroup = emoteImage.gameObject.AddComponent<CanvasGroup>();
+        }
+        canvasGroup.alpha = 1f;
+        
+        float elapsedTime = 0f;
+        while (elapsedTime < emotePopDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = Mathf.Sin((elapsedTime / emotePopDuration) * Mathf.PI * 0.5f);
+            emoteRect.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * 1.2f, t);
+            emoteRect.anchoredPosition = Vector2.Lerp(startPos, midPos, t * 0.5f);
+            yield return null;
+        }
+        emoteRect.localScale = Vector3.one * 1.2f;
+        emoteRect.anchoredPosition = midPos;
+        
+        yield return new WaitForSeconds(emoteDuration - emotePopDuration - emoteFadeDuration);
+        
+        elapsedTime = 0f;
+        while (elapsedTime < emoteFadeDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / emoteFadeDuration;
+            canvasGroup.alpha = 1f - t;
+            emoteRect.anchoredPosition = Vector2.Lerp(midPos, endPos, t);
+            yield return null;
+        }
+        
+        emoteImage.gameObject.SetActive(false);
+        emoteRect.anchoredPosition = startPos;
+        emoteRect.localScale = Vector3.zero;
+        canvasGroup.alpha = 1f;
     }
     
     IEnumerator StopSoundAfterDelay(float delay)

@@ -795,8 +795,8 @@ public class MasakuUI : MonoBehaviour
                         if (outline == null)
                         {
                             outline = menu.AddComponent<UnityEngine.UI.Outline>();
-                            outline.effectColor = Color.black; 
-                            outline.effectDistance = new Vector2(10, -10); 
+                            outline.effectColor = Color.yellow; 
+                            outline.effectDistance = new Vector2(5, -5); 
                         }
                         outline.enabled = true;
                     }
@@ -810,7 +810,7 @@ public class MasakuUI : MonoBehaviour
                             outline = menu.AddComponent<UnityEngine.UI.Outline>();
                         }
                         outline.effectColor = Color.yellow;
-                        outline.effectDistance = new Vector2(8, -8);
+                        outline.effectDistance = new Vector2(5, -5);
                         outline.enabled = true;
                     }
                     else
@@ -999,8 +999,10 @@ public class MasakuUI : MonoBehaviour
         {
             GameManager.Instance.SubmitOrder(selectedSeat);
             selectedSeat = -1;
+            highlightedSeat = -1;
             
             UpdateCustomerMenus();
+            UpdateCustomerHighlight();
         }
         
         isExecutingOrder = false;

@@ -246,6 +246,7 @@ public class MainMenuManager : MonoBehaviour
         
         if (cutscenePanel == null || cutsceneImage == null || cutsceneSprites == null || cutsceneSprites.Length == 0)
         {
+            DisableAllLightsBeforeLoad();
             UnityEngine.SceneManagement.SceneManager.LoadScene("MainScene");
             yield break;
         }
@@ -283,7 +284,21 @@ public class MainMenuManager : MonoBehaviour
         
         cutscenePanel.SetActive(false);
         
+        DisableAllLightsBeforeLoad();
         UnityEngine.SceneManagement.SceneManager.LoadScene("MainScene");
+    }
+    
+    void DisableAllLightsBeforeLoad()
+    {
+        Light[] allLights = FindObjectsOfType<Light>(true);
+        foreach (Light light in allLights)
+        {
+            // Destroy lights completely to ensure they don't carry over
+            if (light != null && light.gameObject != null)
+            {
+                Destroy(light.gameObject);
+            }
+        }
     }
     
     IEnumerator FadeCutscene(float startAlpha, float endAlpha, float duration)

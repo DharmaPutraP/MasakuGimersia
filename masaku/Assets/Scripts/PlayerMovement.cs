@@ -31,6 +31,9 @@ public class PlayerMovement : MonoBehaviour
     [Header("Walk Effect")]
     private WalkSmokeEffect smokeEffect;
     
+    [Header("Cutting Board Effect")]
+    public CuttingBoardEffect cuttingBoardEffect;
+    
     private Vector3 targetPosition;
     private bool isMoving = false;
     private bool isWaiting = false; 
@@ -246,18 +249,34 @@ public class PlayerMovement : MonoBehaviour
         switch (currentActionCard.cardType)
         {
             case CardType.PotongSayuran:
-                if (currentActionCard.targetTag.Contains("CuttingBoard") && knifeAnimator != null)
+                if (currentActionCard.targetTag.Contains("CuttingBoard"))
                 {
-                    knifeAnimator.SetBool("Cut", true);
+                    if (knifeAnimator != null)
+                    {
+                        knifeAnimator.SetBool("Cut", true);
+                    }
+                    
+                    if (cuttingBoardEffect != null)
+                    {
+                        cuttingBoardEffect.PlayCuttingAnimation(CardType.PotongSayuran);
+                    }
                 }
                 PlaySound(cuttingSound, true); 
                 yield return StartCoroutine(PerformAction("Potong Sayuran", 2f));
                 break;
                 
             case CardType.PotongDaging:
-                if (currentActionCard.targetTag.Contains("CuttingBoard") && knifeAnimator != null)
+                if (currentActionCard.targetTag.Contains("CuttingBoard"))
                 {
-                    knifeAnimator.SetBool("Cut", true);
+                    if (knifeAnimator != null)
+                    {
+                        knifeAnimator.SetBool("Cut", true);
+                    }
+                    
+                    if (cuttingBoardEffect != null)
+                    {
+                        cuttingBoardEffect.PlayCuttingAnimation(CardType.PotongDaging);
+                    }
                 }
                 PlaySound(cuttingSound, true); 
                 yield return StartCoroutine(PerformAction("Potong Daging", 2f));

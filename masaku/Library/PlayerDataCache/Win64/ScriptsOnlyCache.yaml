@@ -5,6 +5,7 @@ ScriptsOnlyBuild:
     - Customer
     - CustomerEntranceManager
     - CustomerInstance
+    - CuttingBoardEffect
     - GameManager
     - KitchenLocationManager
     - MainMenuManager
@@ -12,6 +13,9 @@ ScriptsOnlyBuild:
     - MasakuUI
     - PlayerMovement
     - ScreenFade
+    - WalkSmokeEffect
+    DOTween.dll:
+    - DG.Tweening.Core.DOTweenSettings
     Unity.Rider.Editor.dll:
     - Packages.Rider.Editor.UnitTesting.CallbackData
     Unity.TextMeshPro:
@@ -28,8 +32,10 @@ ScriptsOnlyBuild:
     UnityEditor.Graphs.dll:
     - UnityEditor.Graphs.AnimationBlendTree.Graph
     - UnityEditor.Graphs.AnimationBlendTree.GraphGUI
+    - UnityEditor.Graphs.AnimationStateMachine.AnyStateNode
     - UnityEditor.Graphs.AnimationStateMachine.Graph
     - UnityEditor.Graphs.AnimationStateMachine.GraphGUI
+    - UnityEditor.Graphs.AnimationStateMachine.StateNode
     - UnityEditor.Graphs.AnimatorControllerTool
     UnityEditor.TestRunner.dll:
     - UnityEditor.TestTools.TestRunner.Api.CallbacksHolder
@@ -50,6 +56,9 @@ ScriptsOnlyBuild:
     - CustomerType
     - DayConfiguration
     - KitchenLocationManager/KitchenLocation
+    DOTween:
+    - DG.Tweening.Core.DOTweenSettings/ModulesSetup
+    - DG.Tweening.Core.DOTweenSettings/SafeModeOptions
     Unity.TextMeshPro:
     - TMPro.FaceInfo_Legacy
     - TMPro.FontAssetCreationSettings
@@ -103,6 +112,8 @@ ScriptsOnlyBuild:
       Script: {instanceID: 0}
     - Class: 49
       Script: {instanceID: 0}
+    - Class: 54
+      Script: {instanceID: 0}
     - Class: 65
       Script: {instanceID: 0}
     - Class: 74
@@ -124,10 +135,6 @@ ScriptsOnlyBuild:
     - Class: 108
       Script: {instanceID: 0}
     - Class: 114
-      Script: {instanceID: 1564}
-    - Class: 114
-      Script: {instanceID: 1566}
-    - Class: 114
       Script: {instanceID: 1608}
     - Class: 114
       Script: {instanceID: 2212}
@@ -136,32 +143,36 @@ ScriptsOnlyBuild:
     - Class: 114
       Script: {instanceID: 2862}
     - Class: 114
-      Script: {instanceID: 4174}
+      Script: {instanceID: 3170}
     - Class: 114
-      Script: {instanceID: 4198}
+      Script: {instanceID: 3514}
     - Class: 114
-      Script: {instanceID: 4438}
+      Script: {instanceID: 4192}
     - Class: 114
-      Script: {instanceID: 4698}
+      Script: {instanceID: 4216}
     - Class: 114
-      Script: {instanceID: 5166}
+      Script: {instanceID: 4456}
     - Class: 114
-      Script: {instanceID: 5748}
+      Script: {instanceID: 4716}
     - Class: 114
-      Script: {instanceID: 5894}
+      Script: {instanceID: 5184}
     - Class: 114
-      Script: {instanceID: 6230}
+      Script: {instanceID: 5760}
     - Class: 114
-      Script: {instanceID: 6480}
+      Script: {instanceID: 5776}
     - Class: 114
-      Script: {instanceID: 6816}
+      Script: {instanceID: 5922}
     - Class: 114
-      Script: {instanceID: 7788}
+      Script: {instanceID: 6258}
+    - Class: 114
+      Script: {instanceID: 6842}
+    - Class: 114
+      Script: {instanceID: 7820}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 128
       Script: {instanceID: 0}
-    - Class: 136
+    - Class: 135
       Script: {instanceID: 0}
     - Class: 137
       Script: {instanceID: 0}
@@ -172,6 +183,8 @@ ScriptsOnlyBuild:
     - Class: 198
       Script: {instanceID: 0}
     - Class: 199
+      Script: {instanceID: 0}
+    - Class: 212
       Script: {instanceID: 0}
     - Class: 213
       Script: {instanceID: 0}
@@ -200,6 +213,8 @@ ScriptsOnlyBuild:
       Script: {instanceID: 0}
     - Class: 48
       Script: {instanceID: 0}
+    - Class: 54
+      Script: {instanceID: 0}
     - Class: 65
       Script: {instanceID: 0}
     - Class: 74
@@ -221,10 +236,6 @@ ScriptsOnlyBuild:
     - Class: 108
       Script: {instanceID: 0}
     - Class: 114
-      Script: {instanceID: 1564}
-    - Class: 114
-      Script: {instanceID: 1566}
-    - Class: 114
       Script: {instanceID: 1608}
     - Class: 114
       Script: {instanceID: 2586}
@@ -233,33 +244,41 @@ ScriptsOnlyBuild:
     - Class: 114
       Script: {instanceID: 2862}
     - Class: 114
-      Script: {instanceID: 3338}
+      Script: {instanceID: 2890}
     - Class: 114
-      Script: {instanceID: 4198}
+      Script: {instanceID: 3170}
     - Class: 114
-      Script: {instanceID: 4698}
+      Script: {instanceID: 3344}
     - Class: 114
-      Script: {instanceID: 5102}
+      Script: {instanceID: 4216}
     - Class: 114
-      Script: {instanceID: 5166}
+      Script: {instanceID: 4716}
     - Class: 114
-      Script: {instanceID: 5894}
+      Script: {instanceID: 5120}
     - Class: 114
-      Script: {instanceID: 5980}
+      Script: {instanceID: 5184}
     - Class: 114
-      Script: {instanceID: 6230}
+      Script: {instanceID: 5760}
     - Class: 114
-      Script: {instanceID: 6480}
+      Script: {instanceID: 5922}
     - Class: 114
-      Script: {instanceID: 6816}
+      Script: {instanceID: 6008}
     - Class: 114
-      Script: {instanceID: 7312}
+      Script: {instanceID: 6258}
     - Class: 114
-      Script: {instanceID: 7444}
+      Script: {instanceID: 6506}
     - Class: 114
-      Script: {instanceID: 7570}
+      Script: {instanceID: 6842}
     - Class: 114
-      Script: {instanceID: 7788}
+      Script: {instanceID: 7342}
+    - Class: 114
+      Script: {instanceID: 7474}
+    - Class: 114
+      Script: {instanceID: 7602}
+    - Class: 114
+      Script: {instanceID: 7820}
+    - Class: 114
+      Script: {instanceID: 288918}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 128
@@ -291,18 +310,6 @@ ScriptsOnlyBuild:
     - Class: 225
       Script: {instanceID: 0}
   scriptHashData:
-  - hash:
-      serializedVersion: 2
-      Hash: 540882762544409cc4530e60db00e951
-    assemblyName: UnityEngine.UI
-    namespaceName: UnityEngine.UI
-    className: CanvasScaler
-  - hash:
-      serializedVersion: 2
-      Hash: 915204dac8acad99f076d6e72ada0a0f
-    assemblyName: UnityEngine.UI
-    namespaceName: UnityEngine.UI
-    className: Button
   - hash:
       serializedVersion: 2
       Hash: 55060a7bf226ac385ce19ebd450f199f
@@ -407,7 +414,7 @@ ScriptsOnlyBuild:
     className: UnityOnBecameVisibleMessageListener
   - hash:
       serializedVersion: 2
-      Hash: d10bb4866b557dfd2d3106b06db965ed
+      Hash: 6beb91947612c093c33ffc310272ce6b
     assemblyName: Assembly-CSharp
     namespaceName: 
     className: MasakuUI
@@ -473,6 +480,12 @@ ScriptsOnlyBuild:
     className: GraphicRaycaster
   - hash:
       serializedVersion: 2
+      Hash: 4106f6ee7015eb109253495118a7c517
+    assemblyName: Assembly-CSharp
+    namespaceName: 
+    className: WalkSmokeEffect
+  - hash:
+      serializedVersion: 2
       Hash: 3b5263a98bcc71d9a9d1d78a31b34ced
     assemblyName: Unity.TextMeshPro
     namespaceName: TMPro
@@ -519,6 +532,12 @@ ScriptsOnlyBuild:
     assemblyName: UnityEngine.UI
     namespaceName: UnityEngine.UI
     className: ToggleGroup
+  - hash:
+      serializedVersion: 2
+      Hash: 915204dac8acad99f076d6e72ada0a0f
+    assemblyName: UnityEngine.UI
+    namespaceName: UnityEngine.UI
+    className: Button
   - hash:
       serializedVersion: 2
       Hash: d90629714fa6b0145fcaffc87f5c6559
@@ -579,6 +598,18 @@ ScriptsOnlyBuild:
     assemblyName: UnityEngine.TestRunner
     namespaceName: UnityEngine.TestTools.TestRunner.Callbacks
     className: PlayerQuitHandler
+  - hash:
+      serializedVersion: 2
+      Hash: 2a4bf9bfa4fc85b7c3fd76767f844af6
+    assemblyName: DOTween.dll
+    namespaceName: DG.Tweening.Core
+    className: DOTweenComponent
+  - hash:
+      serializedVersion: 2
+      Hash: 4f1dec93fa2a0b0e7b8b47518da31b1c
+    assemblyName: DOTween.dll
+    namespaceName: DG.Tweening.Core
+    className: DOTweenSettings
   - hash:
       serializedVersion: 2
       Hash: cf32d98954e63b8e30e9334b152e9b8e
@@ -689,7 +720,7 @@ ScriptsOnlyBuild:
     className: UnityOnJointBreak2DMessageListener
   - hash:
       serializedVersion: 2
-      Hash: 804808f703debb2de86f9d525ceb7f78
+      Hash: 863b1cb7775cd9fc8673c3f1e8d375c9
     assemblyName: Assembly-CSharp
     namespaceName: 
     className: CustomerEntranceManager
@@ -869,7 +900,13 @@ ScriptsOnlyBuild:
     className: StateGraphAsset
   - hash:
       serializedVersion: 2
-      Hash: f3b479d160a30a0fd98614ff61640cc8
+      Hash: 540882762544409cc4530e60db00e951
+    assemblyName: UnityEngine.UI
+    namespaceName: UnityEngine.UI
+    className: CanvasScaler
+  - hash:
+      serializedVersion: 2
+      Hash: 7d8dff0f01ccdfab7729fb36330f72fa
     assemblyName: Assembly-CSharp
     namespaceName: 
     className: MainMenuManager
@@ -953,19 +990,13 @@ ScriptsOnlyBuild:
     className: BeforeAfterTestCommandState
   - hash:
       serializedVersion: 2
-      Hash: 70b631b6511f3871cc602dadcae0f7da
-    assemblyName: Assembly-CSharp
-    namespaceName: 
-    className: GameSetup
-  - hash:
-      serializedVersion: 2
       Hash: 8bbce9932f67ad8e7f4eefec87800f94
     assemblyName: Unity.TextMeshPro
     namespaceName: TMPro
     className: TextContainer
   - hash:
       serializedVersion: 2
-      Hash: c33198d940f4c9a00378785593778472
+      Hash: 78aa399b073071cb91c40b74d7923206
     assemblyName: Assembly-CSharp
     namespaceName: 
     className: PlayerMovement
@@ -1103,7 +1134,7 @@ ScriptsOnlyBuild:
     className: ControlTrack
   - hash:
       serializedVersion: 2
-      Hash: ea4e907a3baf0639bfd0da4790bade12
+      Hash: e12959aacd5be99a7316efaed8fea187
     assemblyName: Assembly-CSharp
     namespaceName: 
     className: CustomerInstance
@@ -1127,7 +1158,7 @@ ScriptsOnlyBuild:
     className: UnityOnParticleCollisionMessageListener
   - hash:
       serializedVersion: 2
-      Hash: b25bf937ac42ab298ffd15b0f8f3a04a
+      Hash: a6f09dd2260138a8356ad061f7651539
     assemblyName: Assembly-CSharp
     namespaceName: 
     className: GameManager
@@ -1203,8 +1234,20 @@ ScriptsOnlyBuild:
     assemblyName: Unity.VisualScripting.Core
     namespaceName: Unity.VisualScripting
     className: UnityOnSliderValueChangedMessageListener
+  - hash:
+      serializedVersion: 2
+      Hash: 9a0c1fc354645a84d6055cebc97c823a
+    assemblyName: Assembly-CSharp
+    namespaceName: 
+    className: MainSceneLightingFixer
+  - hash:
+      serializedVersion: 2
+      Hash: e6467e6a6e1595837d429ca43ea70ac4
+    assemblyName: Assembly-CSharp
+    namespaceName: 
+    className: CuttingBoardEffect
   platform: 19
   scenePathNames:
   - Assets/Scenes/MainMenu.unity
   - Assets/Scenes/MainScene.unity
-  playerPath: D:/Masaku/Masaku!.exe
+  playerPath: D:/masaku_final/Masaku!.exe
